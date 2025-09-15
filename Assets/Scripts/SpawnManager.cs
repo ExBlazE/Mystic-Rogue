@@ -6,6 +6,7 @@ public class SpawnManager : MonoBehaviour
     [SerializeField] private GameObject enemyPrefab;
 
     [Space]
+    [SerializeField] private float preSpawnDelay = 5.0f;
     [SerializeField] private float spawnDelayStart = 3.0f;
     [SerializeField] private float spawnDelayReduce = 0.5f;
     [SerializeField] private float spawnDelayMin = 0.5f;
@@ -36,6 +37,8 @@ public class SpawnManager : MonoBehaviour
         float spawnDelay = spawnDelayStart;
         int currentStage = 0;
 
+        yield return new WaitForSeconds(preSpawnDelay);
+
         // Loop to spawn single enemies continuously with a delay in between
         while (true)
         {
@@ -50,7 +53,7 @@ public class SpawnManager : MonoBehaviour
             gameManager.enemiesOnScreen++;
 
             // Get the current difficulty stage
-            int newStage = (int)gameManager.timeAlive / stageLength;
+            int newStage = (int)((gameManager.timeAlive - preSpawnDelay) / stageLength);
 
             // If stage advances, set new stage and reduce delay between enemy spawns
             if (currentStage < newStage)
