@@ -119,6 +119,9 @@ public class PlayerControl : MonoBehaviour
             // Spawn the projectile and start cooldown
             Instantiate(projectilePrefab, spawnPos, spawnRot, spawnParent);
             currentShotCooldown = shotCooldown;
+
+            // Play projectile creation sound
+            AudioManager.Instance.PlayShotStart();
         }
 
         // Reduce shot cooldown to zero
@@ -186,7 +189,8 @@ public class PlayerControl : MonoBehaviour
         // Temp code to freeze game when health is zero
         if (health == 0 && Time.timeScale > 0)
         {
-            Time.timeScale = 0;
+            StartCoroutine(EndGame());
+            AudioManager.Instance.EndBGM();
             currentShotCooldown = shotCooldown;
         }
     }
@@ -347,5 +351,21 @@ public class PlayerControl : MonoBehaviour
 
         // Set flag to indicate that fading is complete
         shieldFading = false;
+    }
+
+    IEnumerator EndGame()
+    {
+        float currentTimeScale = Time.timeScale;
+        float timeElapsed = 0;
+
+        while (timeElapsed < 1f)
+        {
+            Time.timeScale = Mathf.Lerp(currentTimeScale, 0f, timeElapsed / 1f);
+            timeElapsed += Time.unscaledDeltaTime;
+
+            yield return null;
+        }
+
+        Time.timeScale = 0f;
     }
 }

@@ -53,6 +53,7 @@ public class Projectile : MonoBehaviour
             Destroy(gameObject);
 
             gameManager.enemiesOnScreen--;
+            AudioManager.Instance.PlayShotHit();
         }
 
         // Logic for enemy projectiles
@@ -65,6 +66,7 @@ public class Projectile : MonoBehaviour
 
                 player.ModifyShield(-enemyShotDamage);
                 Destroy(gameObject);
+                AudioManager.Instance.PlayShotHit();
             }
 
             //Logic for hitting player
@@ -74,6 +76,7 @@ public class Projectile : MonoBehaviour
 
                 player.ModifyHealth(-enemyShotDamage);
                 Destroy(gameObject);
+                AudioManager.Instance.PlayShotHit();
             }
         }
     }

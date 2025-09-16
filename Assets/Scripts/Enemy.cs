@@ -122,6 +122,8 @@ public class Enemy : MonoBehaviour
             Destroy(gameObject);
 
             gameManager.enemiesOnScreen--;
+
+            AudioManager.Instance.PlayShotHit();
         }
     }
 
@@ -137,6 +139,8 @@ public class Enemy : MonoBehaviour
             Destroy(gameObject);
 
             gameManager.enemiesOnScreen--;
+
+            AudioManager.Instance.PlayShotHit();
         }
     }
 }

@@ -125,10 +125,11 @@ public class FadeTutorial : MonoBehaviour
     {
         activeFades--;
 
-        // If all components have finished fading, set the tutorial object inactive
+        // If all components have finished fading, set the tutorial object inactive and start BGM
         if (activeFades <= 0)
         {
             gameObject.SetActive(false);
+            AudioManager.Instance.StartBGM();
         }
     }
 }
