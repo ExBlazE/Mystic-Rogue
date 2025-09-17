@@ -1,99 +1,79 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class PlayerControl : MonoBehaviour
 {
     [Header("Aiming")]
-    [SerializeField] private GameObject orbFocus;
-    [SerializeField] private GameObject orbObject;
-    [SerializeField] private LayerMask targetLayers;
+    [SerializeField] GameObject orbFocus;
+    [SerializeField] GameObject orbObject;
+    [SerializeField] LayerMask targetLayers;
 
     [Header("Movement")]
-    [SerializeField] private Animator playerAnim;
-    [SerializeField] private float moveSpeed = 1f;
+    [SerializeField] Animator playerAnim;
+    [SerializeField] float moveSpeed = 1f;
 
     [Header("Shooting")]
-    [SerializeField] private GameObject projectilePrefab;
-    [SerializeField] private float shotCooldown = 0.3f;
+    [SerializeField] GameObject projectilePrefab;
+    [SerializeField] float shotCooldown = 0.3f;
 
     private float currentShotCooldown = 0f;
 
     [Header("Shield")]
-    [SerializeField] private GameObject shieldObject;
-    [SerializeField] private float shieldRegenPerSecond = 10f;
-    [SerializeField] private float shieldCostPerSecond = 5f;
-    [SerializeField] private float shieldRegenCooldown = 3f;
-    [SerializeField] private float shieldFadeDuration = 0.1f;
-    [SerializeField] private const string shieldAlphaName = "_Alpha";
+    [SerializeField] GameObject shieldObject;
+    [SerializeField] float shieldRegenPerSecond = 10f;
+    [SerializeField] float shieldCostPerSecond = 5f;
+    [SerializeField] float shieldRegenCooldown = 3f;
+    [SerializeField] float shieldFadeDuration = 0.1f;
 
     private float currentShieldRegenCooldown;
     private bool isShieldActive;
-    private Renderer shieldRenderer;
     private bool shieldFading = false;
     private bool fadeOutQueued = false;
+    private Renderer shieldRenderer;
+    private const string shieldAlphaName = "_Alpha";
 
-    [Header("UI")]
-    [SerializeField] private Slider healthSlider;
-    [SerializeField] private Slider shieldSlider;
+    [Header("Stats")]
+    public float maxHealth = 100f;
+    public float maxShield = 50f;
 
-    [Header("Info (Do not change)")]
-    [SerializeField] private float maxHealth = 100f;
-    [SerializeField] private float maxShield = 50f;
-    [SerializeField] private float health;
-    [SerializeField] private float shield;
+    public float health { get; private set; }
+    public float shield { get; private set; }
 
     private Rigidbody playerRb;
-    private Rigidbody orbFocusRb;
 
     private float verticalInput;
     private float horizontalInput;
 
-    private GameManager gameManager;
     public static PlayerControl Instance;
 
     void Awake()
     {
-        // Singleton reference to this script
+        // Create singleton reference to this script
         if (Instance == null)
             Instance = this;
         else
             Destroy(gameObject);
 
-        // Get reference to player and orb focus rigidbody components
+        // Get reference to player rigidbody component
         playerRb = GetComponent<Rigidbody>();
-        orbFocusRb = GetComponent<Rigidbody>();
 
-        // Set max frame rate to avoid errors in editor
-        Application.targetFrameRate = 144;
+        // Set starting health and shield to max
+        health = maxHealth;
+        shield = maxShield;
     }
 
     void Start()
     {
-        // Set starting health and shield to max
-        health = maxHealth;
-        shield = maxShield;
-
-        // Set health UI
-        healthSlider.minValue = 0f;
-        healthSlider.maxValue = maxHealth;
-        healthSlider.value = health;
-
-        // Set shield UI
-        shieldSlider.minValue = 0f;
-        shieldSlider.maxValue = maxShield;
-        shieldSlider.value = shield;
-
         // Disable shield by default at start
         shieldObject.SetActive(false);
         isShieldActive = false;
+
+        // Reset cooldowns
+        currentShotCooldown = 0;
         currentShieldRegenCooldown = 0;
 
         // Get shield's renderer component
         shieldRenderer = shieldObject.GetComponent<Renderer>();
-
-        // Get reference to game manager via singleton
-        gameManager = GameManager.Instance;
     }
 
     void Update()
@@ -105,99 +85,82 @@ public class PlayerControl : MonoBehaviour
         // Set animator parameters
         SetMoveAnimParam();
 
-        // Rotate orb to face mouse position
-        MoveOrb();
-        
-        // Shoot projectile on left-click and when cooldown is zero
-        if (Input.GetKeyDown(KeyCode.Mouse0) && currentShotCooldown == 0)
+        // Main player control logic to only run when game is active and not paused
+        if (GameManager.Instance.isGameActive && !GameManager.Instance.isGamePaused)
         {
-            // Get the spawn position, rotation and object transform to parent projectile to
-            Vector3 spawnPos = orbObject.transform.position;
-            Quaternion spawnRot = orbFocus.transform.rotation;
-            Transform spawnParent = gameManager.projectileGroupObject;
+            // Rotate orb to face mouse position
+            MoveOrb();
 
-            // Spawn the projectile and start cooldown
-            Instantiate(projectilePrefab, spawnPos, spawnRot, spawnParent);
-            currentShotCooldown = shotCooldown;
-
-            // Play projectile creation sound
-            AudioManager.Instance.PlayShotStart();
-        }
-
-        // Reduce shot cooldown to zero
-        if (currentShotCooldown > 0)
-        {
-            currentShotCooldown -= Time.deltaTime;
-            if (currentShotCooldown < 0)
-                currentShotCooldown = 0;
-        }
-
-        // Enable shield when right-click is clicked
-        if (Input.GetKeyDown(KeyCode.Mouse1))
-        {
-            if (!isShieldActive && shield > 0 && !shieldFading)
+            // Shoot projectile on left-click and when cooldown is zero
+            if (Input.GetKeyDown(KeyCode.Mouse0) && currentShotCooldown == 0)
             {
-                StartCoroutine(ShieldEnable(true));
-                currentShieldRegenCooldown = shieldRegenCooldown;
+                ShootProjectile();
             }
-        }
 
-        // Disable shield when right-click is released
-        if (Input.GetKeyUp(KeyCode.Mouse1))
-        {
+            // Reduce shot cooldown to zero
+            if (currentShotCooldown > 0)
+            {
+                ReduceCooldown(ref currentShotCooldown);
+            }
+
+            // Enable shield when right-click is clicked
+            if (Input.GetKeyDown(KeyCode.Mouse1))
+            {
+                if (!isShieldActive && shield > 0 && !shieldFading)
+                {
+                    StartCoroutine(ShieldEnabled(true));
+                    currentShieldRegenCooldown = shieldRegenCooldown;
+
+                    AudioManager.Instance.PlayShield();
+                }
+            }
+
+            // Disable shield when right-click is released
+            if (Input.GetKeyUp(KeyCode.Mouse1) && isShieldActive)
+            {
+                StartCoroutine(ShieldEnabled(false));
+            }
+
+            // Disable shield when zero
+            if (shield == 0 && isShieldActive)
+            {
+                StartCoroutine(ShieldEnabled(false));
+            }
+
+            // Decrease shield value when active
             if (isShieldActive)
             {
-                StartCoroutine(ShieldEnable(false));
+                float shieldReduce = shieldCostPerSecond * Time.deltaTime;
+                ModifyShield(-shieldReduce);
             }
-        }
 
-        // Disable shield when value below zero
-        if (shield <= 0)
-        {
-            if (isShieldActive)
+            // Reduce shield regen cooldown to zero
+            if (currentShieldRegenCooldown > 0 && !isShieldActive)
             {
-                StartCoroutine(ShieldEnable(false));
+                ReduceCooldown(ref currentShieldRegenCooldown);
             }
-        }
 
-        // Decrease shield value when active
-        if (isShieldActive)
-        {
-            float shieldReduce = shieldCostPerSecond * Time.deltaTime;
-            ModifyShield(-shieldReduce);
-        }
+            // Regen shield
+            if (shield < maxShield && currentShieldRegenCooldown == 0 && !isShieldActive)
+            {
+                float shieldRegen = shieldRegenPerSecond * Time.deltaTime;
+                ModifyShield(shieldRegen);
+            }
 
-        // Reduce shield regen cooldown to zero
-        if (currentShieldRegenCooldown > 0 && !isShieldActive)
-        {
-            currentShieldRegenCooldown -= Time.deltaTime;
-            if (currentShieldRegenCooldown < 0)
-                currentShieldRegenCooldown = 0;
-        }
+            // Synchronize shield's active state with bool
+            shieldObject.SetActive(isShieldActive);
 
-        // Regen shield when shield < 0 and regen = 0
-        if (shield < maxShield && currentShieldRegenCooldown == 0 && !isShieldActive)
-        {
-            float shieldRegen = shieldRegenPerSecond * Time.deltaTime;
-            ModifyShield(shieldRegen);
-        }
-
-        // Update Health and Shield UI
-        healthSlider.value = health;
-        shieldSlider.value = shield;
-
-        // Temp code to freeze game when health is zero
-        if (health == 0 && Time.timeScale > 0)
-        {
-            StartCoroutine(EndGame());
-            AudioManager.Instance.EndBGM();
-            currentShotCooldown = shotCooldown;
+            // End game when health is zero
+            if (health == 0)
+            {
+                GameManager.Instance.EndGame();
+            }
         }
     }
 
+    // Move logic in FixedUpdate for smooth rigidbody physics
     void FixedUpdate()
     {
-        // Move player using rigidbody physics
         Move();
     }
 
@@ -209,9 +172,6 @@ public class PlayerControl : MonoBehaviour
 
         // Clamp direction vector magnitude at 1 to prevent faster diagonal speed
         movement = Vector3.ClampMagnitude(movement, 1.0f);
-
-        // Move player (non-physics movement)
-        // transform.Translate(movement * moveSpeed * Time.deltaTime);
 
         // Move player (via physics movement)
         playerRb.linearVelocity = movement * moveSpeed;
@@ -241,7 +201,7 @@ public class PlayerControl : MonoBehaviour
     void SetMoveAnimParam()
     {
         // Get world space velocity of orb focus from its rigidbody
-        Vector3 worldVelocity = orbFocusRb.linearVelocity;
+        Vector3 worldVelocity = playerRb.linearVelocity;
 
         // Convert to local space velocity
         Vector3 localVelocity = orbFocus.transform.InverseTransformDirection(worldVelocity);
@@ -249,6 +209,21 @@ public class PlayerControl : MonoBehaviour
         // Set animator parameters accordingly
         playerAnim.SetFloat("f_moveForward", localVelocity.z);
         playerAnim.SetFloat("f_moveRight", localVelocity.x);
+    }
+
+    private void ShootProjectile()
+    {
+        // Get the spawn position, rotation and object transform to parent projectile to
+        Vector3 spawnPos = orbObject.transform.position;
+        Quaternion spawnRot = orbFocus.transform.rotation;
+        Transform spawnParent = GameManager.Instance.projectileGroupObject;
+
+        // Spawn the projectile and start cooldown
+        Instantiate(projectilePrefab, spawnPos, spawnRot, spawnParent);
+        currentShotCooldown = shotCooldown;
+
+        // Play shooting sound
+        AudioManager.Instance.PlayShotStart();
     }
 
     // Method to add or remove health
@@ -275,8 +250,17 @@ public class PlayerControl : MonoBehaviour
             shield = maxShield;
     }
 
+    // Method to reduce cooldown timer to zero
+    // Passed parameter directly takes given variable instead of its value
+    private void ReduceCooldown(ref float timer)
+    {
+        timer -= Time.deltaTime;
+        if (timer < 0)
+            timer = 0;
+    }
+
     // Coroutine to enable or disable shield
-    IEnumerator ShieldEnable(bool enabled)
+    IEnumerator ShieldEnabled(bool enabled)
     {
         // This block is meant to queue up a single fade-out after a fade-in
         // Runs only if right-click is released too quickly
@@ -307,7 +291,6 @@ public class PlayerControl : MonoBehaviour
             endAlpha = 1f;
 
             // Activate the shield game object
-            shieldObject.SetActive(true);
             isShieldActive = true;
         }
 
@@ -344,28 +327,11 @@ public class PlayerControl : MonoBehaviour
         // If fading out, deactivate shield object and reset queue flag
         if (!enabled)
         {
-            shieldObject.SetActive(false);
             isShieldActive = false;
             fadeOutQueued = false;
         }
 
         // Set flag to indicate that fading is complete
         shieldFading = false;
-    }
-
-    IEnumerator EndGame()
-    {
-        float currentTimeScale = Time.timeScale;
-        float timeElapsed = 0;
-
-        while (timeElapsed < 1f)
-        {
-            Time.timeScale = Mathf.Lerp(currentTimeScale, 0f, timeElapsed / 1f);
-            timeElapsed += Time.unscaledDeltaTime;
-
-            yield return null;
-        }
-
-        Time.timeScale = 0f;
     }
 }

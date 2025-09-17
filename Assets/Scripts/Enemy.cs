@@ -2,67 +2,49 @@ using UnityEngine;
 
 public class Enemy : MonoBehaviour
 {
-    [SerializeField] private GameObject focus;
-    [SerializeField] private bool canMove = true;
-    [SerializeField] private float moveSpeed = 2.5f;
+    [SerializeField] GameObject focus;
+    [SerializeField] bool canMove = true;
+    [SerializeField] float moveSpeed = 2.5f;
 
     [Space]
-    [SerializeField] private GameObject projectilePrefab;
-    [SerializeField] private bool canShoot = true;
-    [SerializeField] private float shotRange = 15f;
-    [SerializeField] private float shotCooldown = 2.5f;
-    [SerializeField] private float collisionDamage = 20f;
+    [SerializeField] GameObject projectilePrefab;
+    [SerializeField] bool canShoot = true;
+    [SerializeField] float shotRange = 15f;
+    [SerializeField] float shotCooldown = 2.5f;
+    [SerializeField] float collisionDamage = 20f;
 
-    private float shotRangeSqr;
     private float currentCooldown = 0f;
 
     [Space]
-    [SerializeField] private Animator enemyAnim;
+    [SerializeField] Animator enemyAnim;
 
     [Space]
-    [SerializeField] private ParticleSystem playerCollideFX;
-    [SerializeField] private ParticleSystem shieldCollideFX;
+    [SerializeField] ParticleSystem playerCollideFX;
+    [SerializeField] ParticleSystem shieldCollideFX;
 
     private Rigidbody enemyRb;
-
-    private GameManager gameManager;
-    private PlayerControl player;
     
     void Awake()
     {
-        // Get reference to rigidbody and animator components
+        // Get reference to rigidbody component
         enemyRb = GetComponent<Rigidbody>();
-    }
-
-    void Start()
-    {
-        // Get reference to player script via singleton
-        player = PlayerControl.Instance;
-
-        // Get reference to game manager via singleton
-        gameManager = GameManager.Instance;
-
-        // Calculate square of shot range
-        shotRangeSqr = shotRange * shotRange;
     }
 
     void Update()
     {
+        // Calculate square of shot range
+        float shotRangeSqr = shotRange * shotRange;
+
         // Calculate distance-squared to player
-        float distanceToPlayerSqr = (player.transform.position - transform.position).sqrMagnitude;
+        float distanceToPlayerSqr = (PlayerControl.Instance.transform.position - transform.position).sqrMagnitude;
 
         // If within range and cooldown is zero, shoot projectile
-        // We use square of both numbers because Vector3.magnitude takes more time for CPU
+        // We compare square of both numbers because Vector3.magnitude takes more time for CPU
         if (distanceToPlayerSqr < shotRangeSqr)
         {
             if (currentCooldown == 0 && canShoot)
             {
-                Vector3 spawnPos = focus.transform.position;
-                Quaternion spawnRot = transform.rotation;
-                Transform spawnParent = gameManager.projectileGroupObject;
-
-                Instantiate(projectilePrefab, spawnPos, spawnRot, spawnParent);
-                currentCooldown = shotCooldown;
+                ShootProjectile();
             }
         }
 
@@ -78,6 +60,7 @@ public class Enemy : MonoBehaviour
         enemyAnim.SetFloat("f_speed", enemyRb.linearVelocity.magnitude);
     }
 
+    // Move logic in FixedUpdate for smooth collision physics
     void FixedUpdate()
     {
         MoveTowardsPlayer();
@@ -90,14 +73,11 @@ public class Enemy : MonoBehaviour
         if (canMove)
         {
             // Get direction of player from enemy position
-            Vector3 direction = player.transform.position - enemyRb.position;
+            Vector3 direction = PlayerControl.Instance.transform.position - enemyRb.position;
 
             // Create new rotation facing player and apply it to enemy
             Quaternion targetRotation = Quaternion.LookRotation(direction);
             transform.rotation = Quaternion.Euler(0, targetRotation.eulerAngles.y, 0);
-
-            // Move enemy towards player (non-physics method)
-            // transform.Translate(Vector3.forward * moveSpeed * Time.deltaTime);
 
             // Move enemy towards player (physics method)
             enemyRb.linearVelocity = enemyRb.transform.forward * moveSpeed;
@@ -110,20 +90,28 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    // Method to shoot projectile
+    void ShootProjectile()
+    {
+        // Get spawn position, rotation, parent transform
+        Vector3 spawnPos = focus.transform.position;
+        Quaternion spawnRot = transform.rotation;
+        Transform spawnParent = GameManager.Instance.projectileGroupObject;
+
+        // Spawn projectile and start cooldown
+        Instantiate(projectilePrefab, spawnPos, spawnRot, spawnParent);
+        currentCooldown = shotCooldown;
+    }
+
     // Logic to handle enemy touching player
     void OnCollisionEnter(Collision collision)
     {
         // If touching player, deplete health
         if (collision.gameObject.CompareTag("Player"))
         {
-            Instantiate(playerCollideFX, focus.transform.position, transform.rotation, gameManager.particlesGroupObject);
-
-            player.ModifyHealth(-collisionDamage);
-            Destroy(gameObject);
-
-            gameManager.enemiesOnScreen--;
-
-            AudioManager.Instance.PlayShotHit();
+            // Execute collision logic and reduce player health
+            CollisionResult(playerCollideFX);
+            PlayerControl.Instance.ModifyHealth(-collisionDamage);
         }
     }
 
@@ -133,14 +121,23 @@ public class Enemy : MonoBehaviour
         // If touching shield, deplete shield
         if (other.CompareTag("Shield"))
         {
-            Instantiate(shieldCollideFX, focus.transform.position, transform.rotation, gameManager.particlesGroupObject);
-
-            player.ModifyShield(-collisionDamage);
-            Destroy(gameObject);
-
-            gameManager.enemiesOnScreen--;
-
-            AudioManager.Instance.PlayShotHit();
+            // Execute collision logic and reduce player shield
+            CollisionResult(shieldCollideFX);
+            PlayerControl.Instance.ModifyShield(-collisionDamage);
         }
+    }
+
+    void CollisionResult(ParticleSystem collisionParticles)
+    {
+        // Create hit effects
+        Transform particlesGroup = GameManager.Instance.particlesGroupObject;
+        Instantiate(collisionParticles, focus.transform.position, transform.rotation, particlesGroup);
+
+        // Play collision sound
+        AudioManager.Instance.PlayShotHit();
+
+        // Destroy enemy and reduce enemy count
+        Destroy(gameObject);
+        GameManager.Instance.enemiesOnScreen--;
     }
 }

@@ -5,20 +5,21 @@ public class AudioManager : MonoBehaviour
 {
     [Space]
     [SerializeField] AudioSource backgroundMusic;
-    [SerializeField][Range(0f, 1f)]
-    private float musicVolume = 0.5f;
     [SerializeField] float musicEndFadeTime = 3f;
+    [SerializeField][Range(0, 1)]
+    float musicVolume = 0.5f;
 
     [Space]
     [SerializeField] AudioSource shotStart;
     [SerializeField] AudioSource shotHit;
-    [SerializeField]
-    [Range(0f, 1f)]
-    private float effectsVolume = 0.5f;
+    [SerializeField] AudioSource shield;
+    [SerializeField][Range(0, 1)]
+    float effectsVolume = 0.5f;
 
     [Space]
     [SerializeField] AudioClip shotStartClip;
     [SerializeField] AudioClip shotHitClip;
+    [SerializeField] AudioClip shieldClip;
 
     public static AudioManager Instance;
 
@@ -33,13 +34,19 @@ public class AudioManager : MonoBehaviour
 
     void Start()
     {
-        musicVolume = DataManager.Instance.volume;
-        effectsVolume = DataManager.Instance.volume;
+        // If started game from main menu, get initial volumes
+        if (DataManager.Instance != null)
+        {
+            musicVolume = DataManager.Instance.volume;
+            effectsVolume = DataManager.Instance.volume;
+        }
     }
 
     void Update()
     {
-        backgroundMusic.volume = musicVolume;
+        // Change music volume in real time
+        if (GameManager.Instance.isGameActive)
+            backgroundMusic.volume = musicVolume;
     }
 
     public void StartBGM()
@@ -53,18 +60,40 @@ public class AudioManager : MonoBehaviour
         StartCoroutine(FadeBGM());
     }
 
+    // To be called when shooting a projectile
     public void PlayShotStart()
     {
         shotStart.PlayOneShot(shotStartClip);
         shotStart.volume = effectsVolume;
     }
 
+    // To be called when a projectile hits something
     public void PlayShotHit()
     {
         shotHit.PlayOneShot(shotHitClip);
         shotHit.volume = effectsVolume;
     }
 
+    // To be called when activating shield
+    public void PlayShield()
+    {
+        shield.PlayOneShot(shieldClip);
+        shield.volume = effectsVolume;
+    }
+
+    // Method for use by music volume slider
+    public void SetMusicVolume(float volume)
+    {
+        musicVolume = volume;
+    }
+
+    // Method for use by effects volume slider
+    public void SetEffectsVolume(float volume)
+    {
+        effectsVolume = volume;
+    }
+
+    // Fade out the BGM over given duration. To be called on game over.
     IEnumerator FadeBGM()
     {
         float startVolume = backgroundMusic.volume;
@@ -79,5 +108,6 @@ public class AudioManager : MonoBehaviour
         }
 
         backgroundMusic.volume = 0f;
+        backgroundMusic.Stop();
     }
 }

@@ -2,15 +2,11 @@ using UnityEngine;
 
 public class BoundaryBehaviour : MonoBehaviour
 {
-    [SerializeField] private float healthPenalty = 5f;
-    [SerializeField] private bool isInPlayArea;
-
-    PlayerControl player;
+    [SerializeField] float healthPenalty = 5f;
+    private bool isInPlayArea;
 
     void Start()
     {
-        // Get singleton reference to player
-        player = PlayerControl.Instance;
         isInPlayArea = true;
     }
 
@@ -20,7 +16,7 @@ public class BoundaryBehaviour : MonoBehaviour
         if (!isInPlayArea)
         {
             float reduceHealth = healthPenalty * Time.deltaTime;
-            player.ModifyHealth(-reduceHealth);
+            PlayerControl.Instance.ModifyHealth(-reduceHealth);
         }
     }
 

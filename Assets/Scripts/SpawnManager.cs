@@ -3,27 +3,19 @@ using UnityEngine;
 
 public class SpawnManager : MonoBehaviour
 {
-    [SerializeField] private GameObject enemyPrefab;
+    [SerializeField] GameObject enemyPrefab;
 
     [Space]
-    [SerializeField] private float preSpawnDelay = 5.0f;
-    [SerializeField] private float spawnDelayStart = 3.0f;
-    [SerializeField] private float spawnDelayReduce = 0.5f;
-    [SerializeField] private float spawnDelayMin = 0.5f;
+    [SerializeField] float preSpawnDelay = 5.0f;
+    [SerializeField] float spawnDelayStart = 3.0f;
+    [SerializeField] float spawnDelayReduce = 0.5f;
+    [SerializeField] float spawnDelayMin = 0.5f;
 
     [Space]
-    [SerializeField] private int stageLength = 20;
+    [SerializeField] int stageLength = 20;
 
     [Space]
-    [SerializeField] private float spawnDistance = 25f;
-
-    private GameManager gameManager;
-
-    void Awake()
-    {
-        // Get game manager reference via singleton
-        gameManager = GameManager.Instance;
-    }
+    [SerializeField] float spawnDistance = 25f;
 
     void Start()
     {
@@ -37,23 +29,24 @@ public class SpawnManager : MonoBehaviour
         float spawnDelay = spawnDelayStart;
         int currentStage = 0;
 
+        // Wait a few seconds at the start (for tutorial to end)
         yield return new WaitForSeconds(preSpawnDelay);
 
         // Loop to spawn single enemies continuously with a delay in between
-        while (true)
+        while (GameManager.Instance.isGameActive)
         {
             // Do not spawn more than max number of enemies
-            while (gameManager.enemiesOnScreen >= gameManager.maxEnemies)
+            while (GameManager.Instance.enemiesOnScreen >= GameManager.Instance.maxEnemies)
             {
                 yield return null;
             }
 
-            // Spawn a single enemy
+            // Spawn a single enemy and increase the enemy count
             SpawnEnemy();
-            gameManager.enemiesOnScreen++;
+            GameManager.Instance.enemiesOnScreen++;
 
             // Get the current difficulty stage
-            int newStage = (int)((gameManager.timeAlive - preSpawnDelay) / stageLength);
+            int newStage = (int)((GameManager.Instance.timeAlive - preSpawnDelay) / stageLength);
 
             // If stage advances, set new stage and reduce delay between enemy spawns
             if (currentStage < newStage)
@@ -84,7 +77,7 @@ public class SpawnManager : MonoBehaviour
 
         // Set spawn rotation to prefab default and parent spawned enemy to enemy group object
         Quaternion spawnRotation = enemyPrefab.transform.rotation;
-        Transform spawnParent = gameManager.enemyGroupObject;
+        Transform spawnParent = GameManager.Instance.enemyGroupObject;
 
         // Spawn the enemy
         Instantiate(enemyPrefab, spawnPosition, spawnRotation, spawnParent);

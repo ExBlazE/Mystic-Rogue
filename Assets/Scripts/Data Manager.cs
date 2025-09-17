@@ -9,6 +9,7 @@ public class DataManager : MonoBehaviour
 
     void Awake()
     {
+        // Create singleton reference to this script
         if (Instance == null)
         {
             Instance = this;
@@ -16,12 +17,21 @@ public class DataManager : MonoBehaviour
         }
         else
             Destroy(gameObject);
+
+        // Set max frame rate to avoid errors in editor
+        Application.targetFrameRate = 60;
     }
 
-    public void TryHighScore(int score)
+    // Try to set new high score and get success or failure result via bool return
+    public bool TryHighScore(int score)
     {
         if (score > highScore)
+        {
             highScore = score;
+            return true;
+        }
+        else
+            return false;
     }
 
     public int GetHighScore()
@@ -29,6 +39,8 @@ public class DataManager : MonoBehaviour
         return highScore;
     }
 
+    // To be used by main menu volume slider
+    // Doesn't actually change volume, just its stored value
     public void SetMusicVolume(float volume)
     {
         this.volume = volume;

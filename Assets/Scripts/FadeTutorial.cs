@@ -1,13 +1,13 @@
-using UnityEngine;
 using System.Collections;
+using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
 public class FadeTutorial : MonoBehaviour
 {
-    [SerializeField] private float introDuration = 1f;
-    [SerializeField] private float waitTime = 3f;
-    [SerializeField] private float outroDuration = 1f;
+    [SerializeField] float introDuration = 1f;
+    [SerializeField] float waitTime = 3f;
+    [SerializeField] float outroDuration = 1f;
 
     private int activeFades = 0;
 
@@ -32,7 +32,7 @@ public class FadeTutorial : MonoBehaviour
         }
     }
 
-    // Coroutine to fade the image passed as parameter in and out
+    // Coroutine to fade in and out the image passed as parameter
     private IEnumerator Fade(Image image)
     {
         // Read the original full color

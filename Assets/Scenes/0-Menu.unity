@@ -1011,6 +1011,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   highScoreText: {fileID: 77882644}
+  volumeSlider: {fileID: 1904571365}
 --- !u!1 &594664699 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4132312772176831909, guid: 64b182395c0b6744a920c74bce3ece13, type: 3}
@@ -6338,7 +6339,7 @@ GameObject:
   - component: {fileID: 1160309341}
   - component: {fileID: 1160309342}
   m_Layer: 0
-  m_Name: Audio Manager
+  m_Name: BGM
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

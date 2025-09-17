@@ -2,28 +2,16 @@ using UnityEngine;
 
 public class Projectile : MonoBehaviour
 {
-    [SerializeField] private float speed = 15f;
-    [SerializeField] private float duration = 3f;
+    [SerializeField] float speed = 15f;
+    [SerializeField] float duration = 3f;
 
     [Space]
-    [SerializeField] private float enemyShotDamage = 10;
+    [SerializeField] float enemyShotDamage = 10;
 
     [Space]
-    [SerializeField] private ParticleSystem playerHitFX;
-    [SerializeField] private ParticleSystem shieldHitFX;
-    [SerializeField] private ParticleSystem enemyHitFX;
-
-    private PlayerControl player;
-    private GameManager gameManager;
-
-    void Start()
-    {
-        // Get reference to singleton player script
-        player = PlayerControl.Instance;
-
-        // Get reference to singleton GameManager script
-        gameManager = GameManager.Instance;
-    }
+    [SerializeField] ParticleSystem playerHitFX;
+    [SerializeField] ParticleSystem shieldHitFX;
+    [SerializeField] ParticleSystem enemyHitFX;
 
     void Update()
     {
@@ -46,13 +34,14 @@ public class Projectile : MonoBehaviour
         // Logic for player projectiles hitting enemies
         if (gameObject.CompareTag("Shot_Player") && other.CompareTag("Enemy"))
         {
-            Instantiate(playerHitFX, transform.position, transform.rotation, gameManager.particlesGroupObject);
-            gameManager.AddScore(1);
+            Transform particlesGroup = GameManager.Instance.particlesGroupObject;
+            Instantiate(playerHitFX, transform.position, transform.rotation, particlesGroup);
+            GameManager.Instance.AddScore(1);
 
             Destroy(other.gameObject);
             Destroy(gameObject);
 
-            gameManager.enemiesOnScreen--;
+            GameManager.Instance.enemiesOnScreen--;
             AudioManager.Instance.PlayShotHit();
         }
 
@@ -62,20 +51,24 @@ public class Projectile : MonoBehaviour
             // Logic for hitting shield
             if (other.CompareTag("Shield"))
             {
-                Instantiate(shieldHitFX, transform.position, transform.rotation, gameManager.particlesGroupObject);
+                Transform particlesGroup = GameManager.Instance.particlesGroupObject;
+                Instantiate(shieldHitFX, transform.position, transform.rotation, particlesGroup);
 
-                player.ModifyShield(-enemyShotDamage);
+                PlayerControl.Instance.ModifyShield(-enemyShotDamage);
                 Destroy(gameObject);
+                
                 AudioManager.Instance.PlayShotHit();
             }
 
             //Logic for hitting player
             else if (other.CompareTag("Player"))
             {
-                Instantiate(enemyHitFX, transform.position, transform.rotation, gameManager.particlesGroupObject);
+                Transform particlesGroup = GameManager.Instance.particlesGroupObject;
+                Instantiate(enemyHitFX, transform.position, transform.rotation, particlesGroup);
 
-                player.ModifyHealth(-enemyShotDamage);
+                PlayerControl.Instance.ModifyHealth(-enemyShotDamage);
                 Destroy(gameObject);
+                
                 AudioManager.Instance.PlayShotHit();
             }
         }
