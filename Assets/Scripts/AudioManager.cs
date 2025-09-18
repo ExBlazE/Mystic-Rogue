@@ -55,6 +55,16 @@ public class AudioManager : MonoBehaviour
         backgroundMusic.volume = musicVolume;
     }
 
+    public void PauseBGM()
+    {
+        backgroundMusic.Pause();
+    }
+
+    public void UnPauseBGM()
+    {
+        backgroundMusic.UnPause();
+    }
+
     public void EndBGM()
     {
         StartCoroutine(FadeBGM());

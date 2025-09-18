@@ -216,7 +216,7 @@ public class PlayerControl : MonoBehaviour
         // Get the spawn position, rotation and object transform to parent projectile to
         Vector3 spawnPos = orbObject.transform.position;
         Quaternion spawnRot = orbFocus.transform.rotation;
-        Transform spawnParent = GameManager.Instance.projectileGroupObject;
+        Transform spawnParent = GameManager.Instance.projectileGroup;
 
         // Spawn the projectile and start cooldown
         Instantiate(projectilePrefab, spawnPos, spawnRot, spawnParent);

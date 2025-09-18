@@ -3,11 +3,13 @@ using UnityEngine;
 public class BoundaryBehaviour : MonoBehaviour
 {
     [SerializeField] float healthPenalty = 5f;
+    [SerializeField] ParticleSystem bleedFX;
     private bool isInPlayArea;
 
     void Start()
     {
         isInPlayArea = true;
+        PlayBleedFX(false);
     }
 
     void Update()
@@ -24,13 +26,25 @@ public class BoundaryBehaviour : MonoBehaviour
     void OnTriggerExit(Collider other)
     {
         if (other.CompareTag("Player"))
+        {
             isInPlayArea = false;
+            PlayBleedFX(true);
+        }
     }
 
     // Detect when player enters play area
     void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
+        {
             isInPlayArea = true;
+            PlayBleedFX(false);
+        }
+    }
+
+    void PlayBleedFX(bool control)
+    {
+        var bleedEmission = bleedFX.emission;
+        bleedEmission.enabled = control;
     }
 }

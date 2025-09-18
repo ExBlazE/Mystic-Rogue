@@ -96,7 +96,7 @@ public class Enemy : MonoBehaviour
         // Get spawn position, rotation, parent transform
         Vector3 spawnPos = focus.transform.position;
         Quaternion spawnRot = transform.rotation;
-        Transform spawnParent = GameManager.Instance.projectileGroupObject;
+        Transform spawnParent = GameManager.Instance.projectileGroup;
 
         // Spawn projectile and start cooldown
         Instantiate(projectilePrefab, spawnPos, spawnRot, spawnParent);
@@ -130,14 +130,14 @@ public class Enemy : MonoBehaviour
     void CollisionResult(ParticleSystem collisionParticles)
     {
         // Create hit effects
-        Transform particlesGroup = GameManager.Instance.particlesGroupObject;
+        Transform particlesGroup = GameManager.Instance.particlesGroup;
         Instantiate(collisionParticles, focus.transform.position, transform.rotation, particlesGroup);
 
         // Play collision sound
         AudioManager.Instance.PlayShotHit();
 
-        // Destroy enemy and reduce enemy count
-        Destroy(gameObject);
+        // Set enemy as inactive to return it to pool and reduce enemy count
+        gameObject.SetActive(false);
         GameManager.Instance.enemiesOnScreen--;
     }
 }

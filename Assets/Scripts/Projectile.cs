@@ -13,6 +13,19 @@ public class Projectile : MonoBehaviour
     [SerializeField] ParticleSystem shieldHitFX;
     [SerializeField] ParticleSystem enemyHitFX;
 
+    private bool hasCollided = false;
+
+    GameManager gm;
+    AudioManager am;
+    PlayerControl player;
+
+    void Start()
+    {
+        gm = GameManager.Instance;
+        am = AudioManager.Instance;
+        player = PlayerControl.Instance;
+    }
+
     void Update()
     {
         // Move projectile forward at constant speed
@@ -31,18 +44,24 @@ public class Projectile : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
+        // This block is to prevent double collision cases
+        if (hasCollided)
+            return;
+
         // Logic for player projectiles hitting enemies
         if (gameObject.CompareTag("Shot_Player") && other.CompareTag("Enemy"))
         {
-            Transform particlesGroup = GameManager.Instance.particlesGroupObject;
-            Instantiate(playerHitFX, transform.position, transform.rotation, particlesGroup);
-            GameManager.Instance.AddScore(1);
+            hasCollided = true;
 
-            Destroy(other.gameObject);
+            Transform particlesGroup = gm.particlesGroup;
+            Instantiate(playerHitFX, transform.position, transform.rotation, particlesGroup);
+            gm.AddScore(1);
+
+            other.gameObject.SetActive(false);
             Destroy(gameObject);
 
-            GameManager.Instance.enemiesOnScreen--;
-            AudioManager.Instance.PlayShotHit();
+            gm.enemiesOnScreen--;
+            am.PlayShotHit();
         }
 
         // Logic for enemy projectiles
@@ -51,25 +70,29 @@ public class Projectile : MonoBehaviour
             // Logic for hitting shield
             if (other.CompareTag("Shield"))
             {
-                Transform particlesGroup = GameManager.Instance.particlesGroupObject;
+                hasCollided = true;
+
+                Transform particlesGroup = gm.particlesGroup;
                 Instantiate(shieldHitFX, transform.position, transform.rotation, particlesGroup);
 
-                PlayerControl.Instance.ModifyShield(-enemyShotDamage);
+                player.ModifyShield(-enemyShotDamage);
                 Destroy(gameObject);
                 
-                AudioManager.Instance.PlayShotHit();
+                am.PlayShotHit();
             }
 
             //Logic for hitting player
             else if (other.CompareTag("Player"))
             {
-                Transform particlesGroup = GameManager.Instance.particlesGroupObject;
+                hasCollided = true;
+
+                Transform particlesGroup = gm.particlesGroup;
                 Instantiate(enemyHitFX, transform.position, transform.rotation, particlesGroup);
 
-                PlayerControl.Instance.ModifyHealth(-enemyShotDamage);
+                player.ModifyHealth(-enemyShotDamage);
                 Destroy(gameObject);
                 
-                AudioManager.Instance.PlayShotHit();
+                am.PlayShotHit();
             }
         }
     }

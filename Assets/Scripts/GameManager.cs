@@ -27,9 +27,9 @@ public class GameManager : MonoBehaviour
     [SerializeField] GameObject newHighScoreText;
 
     [Header("Parent Transforms for Instantiation")]
-    public Transform enemyGroupObject;
-    public Transform projectileGroupObject;
-    public Transform particlesGroupObject;
+    public Transform enemyGroup;
+    public Transform projectileGroup;
+    public Transform particlesGroup;
 
     public int score {  get; private set; }
     public float timeAlive { get; private set; }
@@ -101,9 +101,6 @@ public class GameManager : MonoBehaviour
         UpdateTime();
         UpdateScore();
 
-        // Update max enemies count in real time
-        maxEnemies = setMaxEnemies;
-
         // Press Esc to pause and unpause
         if (Input.GetKeyDown(KeyCode.Escape) && isGameActive)
         {
@@ -112,12 +109,14 @@ public class GameManager : MonoBehaviour
                 isGamePaused = true;
                 Time.timeScale = 0;
                 pauseUI.SetActive(true);
+                AudioManager.Instance.PauseBGM();
             }
             else
             {
                 isGamePaused = false;
                 Time.timeScale = 1f;
                 pauseUI.SetActive(false);
+                AudioManager.Instance.UnPauseBGM();
             }
         }
     }
@@ -190,9 +189,10 @@ public class GameManager : MonoBehaviour
         finalScoreText.SetText(score.ToString("D2"));
 
         // Check for new high score
-        if (DataManager.Instance.TryHighScore(score))
+        if (DataManager.Instance != null)
         {
-            newHighScoreText.SetActive(true);
+            if (DataManager.Instance.TryHighScore(score))
+                newHighScoreText.SetActive(true);
         }
     }
 }

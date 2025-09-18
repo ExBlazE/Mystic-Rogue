@@ -1,3 +1,4 @@
+using System.IO;
 using UnityEngine;
 
 public class DataManager : MonoBehaviour
@@ -28,6 +29,7 @@ public class DataManager : MonoBehaviour
         if (score > highScore)
         {
             highScore = score;
+            SaveData();
             return true;
         }
         else
@@ -45,4 +47,37 @@ public class DataManager : MonoBehaviour
     {
         this.volume = volume;
     }
+
+    public void SaveData()
+    {
+        GameData data = new GameData();
+
+        data.highScore = this.highScore;
+        data.initialVolume = this.volume;
+
+        string jsonText = JsonUtility.ToJson(data);
+
+        File.WriteAllText(Application.persistentDataPath + "/gamedata.json", jsonText);
+    }
+
+    public void LoadData()
+    {
+        string path = Application.persistentDataPath + "/gamedata.json";
+        if (File.Exists(path))
+        {
+            string jsonText = File.ReadAllText(path);
+            GameData data = JsonUtility.FromJson<GameData>(jsonText);
+
+            this.highScore = data.highScore;
+            this.volume = data.initialVolume;
+        }
+    }
+}
+
+// Class for storing high score on a json file
+[System.Serializable]
+public class GameData
+{
+    public int highScore;
+    public float initialVolume;
 }

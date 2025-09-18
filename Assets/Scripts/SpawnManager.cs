@@ -1,9 +1,11 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class SpawnManager : MonoBehaviour
 {
     [SerializeField] GameObject enemyPrefab;
+    private readonly List<GameObject> enemyPool = new List<GameObject>();
 
     [Space]
     [SerializeField] float preSpawnDelay = 5.0f;
@@ -17,14 +19,30 @@ public class SpawnManager : MonoBehaviour
     [Space]
     [SerializeField] float spawnDistance = 25f;
 
+    private GameManager gm;
+
     void Start()
     {
+        // Get reference to singleton
+        gm = GameManager.Instance;
+
+        // Set enemy pool size as more than max enemies as a safety buffer
+        int poolSize = gm.maxEnemies + 5;
+
+        // Create an enemy pool
+        for (int i = 0; i < poolSize; i++)
+        {
+            GameObject enemy = Instantiate(enemyPrefab, gm.enemyGroup);
+            enemy.SetActive(false);
+            enemyPool.Add(enemy);
+        }
+
         // Start coroutine to spawn enemies
-        StartCoroutine(SpawnEnemyWave());
+        StartCoroutine(EnemySpawner());
     }
 
     // Coroutine to spawn enemies with increasing difficulty
-    IEnumerator SpawnEnemyWave()
+    IEnumerator EnemySpawner()
     {
         float spawnDelay = spawnDelayStart;
         int currentStage = 0;
@@ -33,20 +51,19 @@ public class SpawnManager : MonoBehaviour
         yield return new WaitForSeconds(preSpawnDelay);
 
         // Loop to spawn single enemies continuously with a delay in between
-        while (GameManager.Instance.isGameActive)
+        while (gm.isGameActive)
         {
             // Do not spawn more than max number of enemies
-            while (GameManager.Instance.enemiesOnScreen >= GameManager.Instance.maxEnemies)
+            while (gm.enemiesOnScreen >= gm.maxEnemies)
             {
                 yield return null;
             }
 
-            // Spawn a single enemy and increase the enemy count
+            // Spawn a single enemy
             SpawnEnemy();
-            GameManager.Instance.enemiesOnScreen++;
 
             // Get the current difficulty stage
-            int newStage = (int)((GameManager.Instance.timeAlive - preSpawnDelay) / stageLength);
+            int newStage = (int)((gm.timeAlive - preSpawnDelay) / stageLength);
 
             // If stage advances, set new stage and reduce delay between enemy spawns
             if (currentStage < newStage)
@@ -75,11 +92,26 @@ public class SpawnManager : MonoBehaviour
         // Set spawn position at exactly a certain distance from player
         Vector3 spawnPosition = playerPosition + (randomDirection * spawnDistance);
 
-        // Set spawn rotation to prefab default and parent spawned enemy to enemy group object
-        Quaternion spawnRotation = enemyPrefab.transform.rotation;
-        Transform spawnParent = GameManager.Instance.enemyGroupObject;
+        // Get new enemy from the pool, set its position and increment enemy count
+        GameObject newEnemy = GetEnemyFromPool();
+        if (newEnemy != null)
+        {
+            newEnemy.transform.position = spawnPosition;
+            gm.enemiesOnScreen++;
+        }
+    }
 
-        // Spawn the enemy
-        Instantiate(enemyPrefab, spawnPosition, spawnRotation, spawnParent);
+    // Method to get an enemy from the pool
+    private GameObject GetEnemyFromPool()
+    {
+        for (int i = 0; i < enemyPool.Count; i++)
+        {
+            if (!enemyPool[i].activeSelf)
+            {
+                enemyPool[i].SetActive(true);
+                return enemyPool[i];
+            }
+        }
+        return null;
     }
 }
