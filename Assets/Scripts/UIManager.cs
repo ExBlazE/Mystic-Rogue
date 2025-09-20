@@ -6,7 +6,10 @@ using UnityEngine.SceneManagement;
 public class UIManager : MonoBehaviour
 {
     [SerializeField] TextMeshProUGUI highScoreText;
-    [SerializeField] Slider volumeSlider;
+    [SerializeField] Slider musicVolumeSlider;
+    [SerializeField] Slider effectsVolumeSlider;
+    [SerializeField] Button exitButton;
+    [SerializeField] GameObject creditsScreen;
 
     DataManager dm;
 
@@ -18,8 +21,14 @@ public class UIManager : MonoBehaviour
         // Load saved high score and volume
         dm.LoadData();
 
-        // Set volume slider at previously set value
-        volumeSlider.value = dm.volume;
+        // Set volume sliders at previously set value
+        musicVolumeSlider.value = dm.musicVolume;
+        effectsVolumeSlider.value = dm.effectsVolume;
+
+#if UNITY_WEBGL
+        // On WebGL build, hide the exit button
+        exitButton.gameObject.SetActive(false);
+#endif
     }
 
     void Update()
@@ -35,15 +44,18 @@ public class UIManager : MonoBehaviour
     }
 
     // Conditional compilation code written to test exit button in the editor
-    public void ExitButton(Button button)
+    public void ExitButton()
     {
         dm.SaveData();
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.ExitPlaymode();
-#elif UNITY_WEBGL
-        button.interactable = false;
 #else
         Application.Quit();
 #endif
+    }
+
+    public void ToggleCredits()
+    {
+        creditsScreen.SetActive(!creditsScreen.activeSelf);
     }
 }

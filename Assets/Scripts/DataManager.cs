@@ -4,7 +4,10 @@ using UnityEngine;
 public class DataManager : MonoBehaviour
 {
     private int highScore = 0;
-    public float volume = 0.5f;
+    [HideInInspector] public float musicVolume = 0.5f;
+    [HideInInspector] public float effectsVolume = 0.5f;
+
+    [SerializeField] Texture2D cursorTex;
 
     public static DataManager Instance;
 
@@ -21,6 +24,10 @@ public class DataManager : MonoBehaviour
 
         // Set max frame rate to avoid errors in editor
         Application.targetFrameRate = 60;
+
+        // Change cursor
+        Vector2 hotspot = new Vector2(cursorTex.width / 2, cursorTex.height / 2);
+        Cursor.SetCursor(cursorTex, hotspot, CursorMode.Auto);
     }
 
     // Try to set new high score and get success or failure result via bool return
@@ -41,11 +48,18 @@ public class DataManager : MonoBehaviour
         return highScore;
     }
 
-    // To be used by main menu volume slider
-    // Doesn't actually change volume, just its stored value
+    // To be used by main menu music volume slider
+    // Changes stored music volume value to be used in game scene
     public void SetMusicVolume(float volume)
     {
-        this.volume = volume;
+        this.musicVolume = volume;
+    }
+
+    // To be used by main menu effects volume slider
+    // Changes stored effects volume value to be used in game scene
+    public void SetEffectsVolume(float volume)
+    {
+        this.effectsVolume = volume;
     }
 
     public void SaveData()
@@ -53,7 +67,8 @@ public class DataManager : MonoBehaviour
         GameData data = new GameData();
 
         data.highScore = this.highScore;
-        data.initialVolume = this.volume;
+        data.musicVolume = this.musicVolume;
+        data.effectsVolume = this.effectsVolume;
 
         string jsonText = JsonUtility.ToJson(data);
 
@@ -69,7 +84,8 @@ public class DataManager : MonoBehaviour
             GameData data = JsonUtility.FromJson<GameData>(jsonText);
 
             this.highScore = data.highScore;
-            this.volume = data.initialVolume;
+            this.musicVolume = data.musicVolume;
+            this.effectsVolume = data.effectsVolume;
         }
     }
 }
@@ -79,5 +95,6 @@ public class DataManager : MonoBehaviour
 public class GameData
 {
     public int highScore;
-    public float initialVolume;
+    public float musicVolume;
+    public float effectsVolume;
 }

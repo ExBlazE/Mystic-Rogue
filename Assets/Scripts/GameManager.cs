@@ -1,5 +1,6 @@
 using System.Collections;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -48,6 +49,9 @@ public class GameManager : MonoBehaviour
 
     public static GameManager Instance;
 
+    DataManager dm;
+    PlayerControl player;
+
     void Awake()
     {
         // Singleton reference to this script
@@ -59,6 +63,17 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        // Get singleton reference and load initial volume
+        if (DataManager.Instance != null)
+        {
+            dm = DataManager.Instance;
+            musicVolumeSlider.value = dm.musicVolume;
+            effectsVolumeSlider.value = dm.effectsVolume;
+        }
+
+        // Get singleton reference for PlayerControl
+        player = PlayerControl.Instance;
+
         // Set initial state of the game
         isGameActive = true;
         isGamePaused = false;
@@ -68,13 +83,13 @@ public class GameManager : MonoBehaviour
 
         // Set health UI
         healthSlider.minValue = 0f;
-        healthSlider.maxValue = PlayerControl.Instance.maxHealth;
-        healthSlider.value = PlayerControl.Instance.health;
+        healthSlider.maxValue = player.maxHealth;
+        healthSlider.value = player.health;
 
         // Set shield UI
         shieldSlider.minValue = 0f;
-        shieldSlider.maxValue = PlayerControl.Instance.maxShield;
-        shieldSlider.value = PlayerControl.Instance.shield;
+        shieldSlider.maxValue = player.maxShield;
+        shieldSlider.value = player.shield;
 
         // Enable and disable all relevant UI as needed
         gameUI.SetActive(true);
@@ -82,20 +97,13 @@ public class GameManager : MonoBehaviour
         pauseUI.SetActive(false);
         gameOverUI.SetActive(false);
         newHighScoreText.SetActive(false);
-
-        // Set initial volume from main menu
-        if (DataManager.Instance != null)
-        {
-            musicVolumeSlider.value = DataManager.Instance.volume;
-            effectsVolumeSlider.value = DataManager.Instance.volume;
-        }
     }
 
     void Update()
     {
         // Update Health and Shield UI
-        healthSlider.value = PlayerControl.Instance.health;
-        shieldSlider.value = PlayerControl.Instance.shield;
+        healthSlider.value = player.health;
+        shieldSlider.value = player.shield;
 
         // Update the time and score UI every frame
         UpdateTime();
@@ -158,6 +166,8 @@ public class GameManager : MonoBehaviour
     public void BackToMenu()
     {
         Time.timeScale = 1f;
+        if (dm != null)
+            dm.SaveData();
         SceneManager.LoadScene(0);
     }
 
@@ -189,10 +199,26 @@ public class GameManager : MonoBehaviour
         finalScoreText.SetText(score.ToString("D2"));
 
         // Check for new high score
-        if (DataManager.Instance != null)
+        if (dm != null)
         {
-            if (DataManager.Instance.TryHighScore(score))
+            if (dm.TryHighScore(score))
                 newHighScoreText.SetActive(true);
         }
+    }
+
+    // To be used by pause menu music volume slider
+    // Changes stored music volume value in DataManager
+    public void SetMusicVolume(float volume)
+    {
+        if (dm != null)
+            dm.musicVolume = volume;
+    }
+
+    // To be used by pause menu effects volume slider
+    // Changes stored effects volume value in DataManager
+    public void SetEffectsVolume(float volume)
+    {
+        if (dm != null)
+            dm.effectsVolume = volume;
     }
 }

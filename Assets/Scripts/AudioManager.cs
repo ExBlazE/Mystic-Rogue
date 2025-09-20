@@ -3,20 +3,20 @@ using UnityEngine;
 
 public class AudioManager : MonoBehaviour
 {
-    [Space]
+    [Header("BGM")]
     [SerializeField] AudioSource backgroundMusic;
     [SerializeField] float musicEndFadeTime = 3f;
     [SerializeField][Range(0, 1)]
     float musicVolume = 0.5f;
 
-    [Space]
+    [Header("Effects")]
     [SerializeField] AudioSource shotStart;
     [SerializeField] AudioSource shotHit;
     [SerializeField] AudioSource shield;
     [SerializeField][Range(0, 1)]
     float effectsVolume = 0.5f;
 
-    [Space]
+    [Header("Clips to use")]
     [SerializeField] AudioClip shotStartClip;
     [SerializeField] AudioClip shotHitClip;
     [SerializeField] AudioClip shieldClip;
@@ -37,8 +37,8 @@ public class AudioManager : MonoBehaviour
         // If started game from main menu, get initial volumes
         if (DataManager.Instance != null)
         {
-            musicVolume = DataManager.Instance.volume;
-            effectsVolume = DataManager.Instance.volume;
+            musicVolume = DataManager.Instance.musicVolume;
+            effectsVolume = DataManager.Instance.effectsVolume;
         }
     }
 
