@@ -72,15 +72,27 @@ public class DataManager : MonoBehaviour
 
         string jsonText = JsonUtility.ToJson(data);
 
+#if UNITY_WEBGL
+        PlayerPrefs.SetString("gameData", jsonText);
+        PlayerPrefs.Save();
+#else
         File.WriteAllText(Application.persistentDataPath + "/gamedata.json", jsonText);
+#endif
     }
 
     public void LoadData()
     {
+        string jsonText = null;
+#if UNITY_WEBGL
+        if (PlayerPrefs.HasKey("gameData"))
+            jsonText = PlayerPrefs.GetString("gameData");
+#else
         string path = Application.persistentDataPath + "/gamedata.json";
         if (File.Exists(path))
+            jsonText = File.ReadAllText(path);
+#endif
+        if (jsonText != null)
         {
-            string jsonText = File.ReadAllText(path);
             GameData data = JsonUtility.FromJson<GameData>(jsonText);
 
             this.highScore = data.highScore;
