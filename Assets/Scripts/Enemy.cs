@@ -138,6 +138,7 @@ public class Enemy : MonoBehaviour
 
         // Set enemy as inactive to return it to pool and reduce enemy count
         gameObject.SetActive(false);
+        GameManager.Instance.AddScore(1);
         GameManager.Instance.enemiesOnScreen--;
     }
 }
