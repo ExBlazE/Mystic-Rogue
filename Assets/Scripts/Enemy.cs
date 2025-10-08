@@ -3,12 +3,12 @@ using UnityEngine;
 public class Enemy : MonoBehaviour
 {
     [SerializeField] GameObject focus;
-    [SerializeField] bool canMove = true;
+    public bool canMove = true;
     [SerializeField] float moveSpeed = 2.5f;
 
     [Space]
     [SerializeField] GameObject projectilePrefab;
-    [SerializeField] bool canShoot = true;
+    public bool canShoot = true;
     [SerializeField] float shotRange = 15f;
     [SerializeField] float shotCooldown = 2.5f;
     [SerializeField] float collisionDamage = 20f;
@@ -23,11 +23,20 @@ public class Enemy : MonoBehaviour
     [SerializeField] ParticleSystem shieldCollideFX;
 
     private Rigidbody enemyRb;
+
+    PlayerControl player;
+    GameManager gm;
     
     void Awake()
     {
         // Get reference to rigidbody component
         enemyRb = GetComponent<Rigidbody>();
+    }
+
+    void Start()
+    {
+        player = PlayerControl.Instance;
+        gm = GameManager.Instance;
     }
 
     void Update()
@@ -36,7 +45,7 @@ public class Enemy : MonoBehaviour
         float shotRangeSqr = shotRange * shotRange;
 
         // Calculate distance-squared to player
-        float distanceToPlayerSqr = (PlayerControl.Instance.transform.position - transform.position).sqrMagnitude;
+        float distanceToPlayerSqr = (player.transform.position - transform.position).sqrMagnitude;
 
         // If within range and cooldown is zero, shoot projectile
         // We compare square of both numbers because Vector3.magnitude takes more time for CPU
@@ -50,11 +59,9 @@ public class Enemy : MonoBehaviour
 
         // Reduce cooldown to zero
         if (currentCooldown > 0)
-        {
             currentCooldown -= Time.deltaTime;
-            if (currentCooldown < 0)
-                currentCooldown = 0;
-        }
+        if (currentCooldown < 0)
+            currentCooldown = 0;
 
         // Set movement animation parameters
         enemyAnim.SetFloat("f_speed", enemyRb.linearVelocity.magnitude);
@@ -73,7 +80,7 @@ public class Enemy : MonoBehaviour
         if (canMove)
         {
             // Get direction of player from enemy position
-            Vector3 direction = PlayerControl.Instance.transform.position - enemyRb.position;
+            Vector3 direction = player.transform.position - enemyRb.position;
 
             // Create new rotation facing player and apply it to enemy
             Quaternion targetRotation = Quaternion.LookRotation(direction);
@@ -96,7 +103,7 @@ public class Enemy : MonoBehaviour
         // Get spawn position, rotation, parent transform
         Vector3 spawnPos = focus.transform.position;
         Quaternion spawnRot = transform.rotation;
-        Transform spawnParent = GameManager.Instance.projectileGroup;
+        Transform spawnParent = gm.projectileGroup;
 
         // Spawn projectile and start cooldown
         Instantiate(projectilePrefab, spawnPos, spawnRot, spawnParent);
@@ -110,8 +117,9 @@ public class Enemy : MonoBehaviour
         if (collision.gameObject.CompareTag("Player"))
         {
             // Execute collision logic and reduce player health
-            CollisionResult(playerCollideFX);
-            PlayerControl.Instance.ModifyHealth(-collisionDamage);
+            PlayCollisionFX(playerCollideFX);
+            OnHit();
+            player.ModifyHealth(-collisionDamage);
         }
     }
 
@@ -122,23 +130,26 @@ public class Enemy : MonoBehaviour
         if (other.CompareTag("Shield"))
         {
             // Execute collision logic and reduce player shield
-            CollisionResult(shieldCollideFX);
-            PlayerControl.Instance.ModifyShield(-collisionDamage);
+            PlayCollisionFX(shieldCollideFX);
+            OnHit();
+            player.ModifyShield(-collisionDamage);
         }
     }
 
-    void CollisionResult(ParticleSystem collisionParticles)
+    void PlayCollisionFX(ParticleSystem collisionParticles)
     {
         // Create hit effects
-        Transform particlesGroup = GameManager.Instance.particlesGroup;
+        Transform particlesGroup = gm.particlesGroup;
         Instantiate(collisionParticles, focus.transform.position, transform.rotation, particlesGroup);
 
         // Play collision sound
         AudioManager.Instance.PlayShotHit();
+    }
 
-        // Set enemy as inactive to return it to pool and reduce enemy count
+    public void OnHit()
+    {
         gameObject.SetActive(false);
-        GameManager.Instance.AddScore(1);
-        GameManager.Instance.enemiesOnScreen--;
+        gm.enemiesOnScreen--;
+        gm.AddScore(1);
     }
 }

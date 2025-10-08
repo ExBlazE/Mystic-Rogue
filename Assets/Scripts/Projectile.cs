@@ -53,14 +53,14 @@ public class Projectile : MonoBehaviour
         {
             hasCollided = true;
 
+            Enemy enemy = other.GetComponent<Enemy>();
+            enemy.OnHit();
+
             Transform particlesGroup = gm.particlesGroup;
             Instantiate(playerHitFX, transform.position, transform.rotation, particlesGroup);
-            gm.AddScore(1);
 
-            other.gameObject.SetActive(false);
             Destroy(gameObject);
 
-            gm.enemiesOnScreen--;
             am.PlayShotHit();
         }
 

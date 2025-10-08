@@ -6,7 +6,6 @@ public class PlayerControl : MonoBehaviour
     [Header("Aiming")]
     [SerializeField] GameObject orbFocus;
     [SerializeField] GameObject orbObject;
-    [SerializeField] LayerMask targetLayers;
 
     [Header("Movement")]
     [SerializeField] Animator playerAnim;
@@ -39,11 +38,9 @@ public class PlayerControl : MonoBehaviour
     public float health { get; private set; }
     public float shield { get; private set; }
 
+    private InputHandler user;
     private Rigidbody playerRb;
-
-    private float verticalInput;
-    private float horizontalInput;
-
+    
     public static PlayerControl Instance;
 
     void Awake()
@@ -54,7 +51,8 @@ public class PlayerControl : MonoBehaviour
         else
             Destroy(gameObject);
 
-        // Get reference to player rigidbody component
+        // Get reference to other components
+        user = GetComponent<InputHandler>();
         playerRb = GetComponent<Rigidbody>();
 
         // Set starting health and shield to max
@@ -78,10 +76,6 @@ public class PlayerControl : MonoBehaviour
 
     void Update()
     {
-        // Get player input via WASD (used in FixedUpdate)
-        verticalInput = Input.GetAxis("Vertical");
-        horizontalInput = Input.GetAxis("Horizontal");
-
         // Set animator parameters
         SetMoveAnimParam();
 
@@ -92,7 +86,7 @@ public class PlayerControl : MonoBehaviour
             MoveOrb();
 
             // Shoot projectile on left-click and when cooldown is zero
-            if (Input.GetKeyDown(KeyCode.Mouse0) && currentShotCooldown == 0)
+            if (user.IsShooting && currentShotCooldown == 0)
             {
                 ShootProjectile();
             }
@@ -104,7 +98,7 @@ public class PlayerControl : MonoBehaviour
             }
 
             // Enable shield when right-click is clicked
-            if (Input.GetKeyDown(KeyCode.Mouse1))
+            if (user.IsShieldStarted)
             {
                 if (!isShieldActive && shield > 0 && !shieldFading)
                 {
@@ -116,7 +110,7 @@ public class PlayerControl : MonoBehaviour
             }
 
             // Disable shield when right-click is released
-            if (Input.GetKeyUp(KeyCode.Mouse1) && isShieldActive)
+            if (user.IsShieldReleased && isShieldActive)
             {
                 StartCoroutine(ShieldEnabled(false));
             }
@@ -167,8 +161,7 @@ public class PlayerControl : MonoBehaviour
     // Method to move player
     void Move()
     {
-        // Create direction vector based on player input
-        Vector3 movement = new Vector3(horizontalInput, 0, verticalInput);
+        Vector3 movement = new Vector3(user.MoveDirection.x, 0, user.MoveDirection.y);
 
         // Clamp direction vector magnitude at 1 to prevent faster diagonal speed
         movement = Vector3.ClampMagnitude(movement, 1.0f);
@@ -177,22 +170,12 @@ public class PlayerControl : MonoBehaviour
         playerRb.linearVelocity = movement * moveSpeed;
     }
 
-    // Method to spin orb around player to always point at mouse position
+    // Method to spin orb around player
     void MoveOrb()
     {
-        // Draw a ray from camera through the mouse pointer
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
-
-        // Cast the ray until it hits an object in the selected layers
-        if (Physics.Raycast(ray, out hit, Mathf.Infinity, targetLayers))
+        if (user.AimDirection != Vector3.zero)
         {
-            // Get mouse position on ground level and direction from player
-            Vector3 mousePosition = hit.point;
-            Vector3 mouseDirection = mousePosition - orbFocus.transform.position;
-
-            // Create new rotation facing mouse direction and apply it to orbFocus
-            Quaternion targetRotation = Quaternion.LookRotation(mouseDirection);
+            Quaternion targetRotation = Quaternion.LookRotation(user.AimDirection);
             orbFocus.transform.rotation = Quaternion.Euler(0, targetRotation.eulerAngles.y, 0);
         }
     }

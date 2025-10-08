@@ -59,6 +59,12 @@ public class GameManager : MonoBehaviour
             Instance = this;
         else
             Destroy(gameObject);
+
+        // Set max frame rate to avoid errors in editor
+        Application.targetFrameRate = 60;
+#if UNITY_ANDROID
+        Application.targetFrameRate = 30;
+#endif
     }
 
     void Start()

@@ -22,8 +22,11 @@ public class DataManager : MonoBehaviour
         else
             Destroy(gameObject);
 
-        // Set max frame rate to avoid errors in editor
+        // Set max frame rate
         Application.targetFrameRate = 60;
+#if UNITY_ANDROID
+        Application.targetFrameRate = 30;
+#endif
 
         // Change cursor
         Vector2 hotspot = new Vector2(cursorTex.width / 2, cursorTex.height / 2);
