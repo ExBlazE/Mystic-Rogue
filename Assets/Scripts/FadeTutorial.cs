@@ -129,7 +129,6 @@ public class FadeTutorial : MonoBehaviour
         if (activeFades <= 0)
         {
             gameObject.SetActive(false);
-            AudioManager.Instance.StartBGM();
         }
     }
 }

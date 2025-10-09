@@ -10,9 +10,10 @@ public class InputHandler : MonoBehaviour
     [SerializeField] AimStick aimStick;
     [SerializeField] ShieldButton shieldButton;
 
-#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WEBGL
-#elif UNITY_ANDROID
-    float moveSensitivity = 3f;
+#if UNITY_ANDROID
+    [Space]
+    [SerializeField] float moveSensitivity = 3f;
+    [SerializeField] bool alwaysMaxSpeed = false;
 #endif
 
     public Vector2 MoveDirection {  get; private set; }
@@ -25,7 +26,7 @@ public class InputHandler : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WEBGL
+#if UNITY_STANDALONE || UNITY_WEBGL
         SetMove();
         SetAim();
         
@@ -50,15 +51,7 @@ public class InputHandler : MonoBehaviour
 #endif
     }
 
-    void LateUpdate()
-    {
-        if (IsShieldStarted)
-            IsShieldStarted = false;
-        if (IsShieldReleased)
-            IsShieldReleased = false;
-    }
-
-#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WEBGL
+#if UNITY_STANDALONE || UNITY_WEBGL
     void SetMove()
     {
         float horizontal = Input.GetAxis("Horizontal");
@@ -84,8 +77,13 @@ public class InputHandler : MonoBehaviour
     void SetSmoothMove()
     {
         float maxMovePerFrame = Time.deltaTime * moveSensitivity;
-        float newX = Mathf.MoveTowards(MoveDirection.x, moveStick.Direction.x, maxMovePerFrame);
-        float newY = Mathf.MoveTowards(MoveDirection.y, moveStick.Direction.y, maxMovePerFrame);
+        Vector2 newDirection;
+        if (alwaysMaxSpeed)
+            newDirection = moveStick.Direction.normalized;
+        else
+            newDirection = moveStick.Direction;
+        float newX = Mathf.MoveTowards(MoveDirection.x, newDirection.x, maxMovePerFrame);
+        float newY = Mathf.MoveTowards(MoveDirection.y, newDirection.y, maxMovePerFrame);
         MoveDirection = new Vector2 (newX, newY);
     }
 

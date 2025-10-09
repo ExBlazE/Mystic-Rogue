@@ -1,6 +1,5 @@
 using System.Collections;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -13,9 +12,11 @@ public class GameManager : MonoBehaviour
     [SerializeField] TextMeshProUGUI scoreText;
     [SerializeField] Slider healthSlider;
     [SerializeField] Slider shieldSlider;
+    [SerializeField] GameObject mobileControls;
 
     [Header("Tutorial UI")]
     [SerializeField] GameObject tutorialUI;
+    [SerializeField] GameObject mobileTutorialUI;
 
     [Header("Pause Menu UI")]
     [SerializeField] GameObject pauseUI;
@@ -62,9 +63,6 @@ public class GameManager : MonoBehaviour
 
         // Set max frame rate to avoid errors in editor
         Application.targetFrameRate = 60;
-#if UNITY_ANDROID
-        Application.targetFrameRate = 30;
-#endif
     }
 
     void Start()
@@ -99,10 +97,18 @@ public class GameManager : MonoBehaviour
 
         // Enable and disable all relevant UI as needed
         gameUI.SetActive(true);
-        tutorialUI.SetActive(true);
         pauseUI.SetActive(false);
         gameOverUI.SetActive(false);
         newHighScoreText.SetActive(false);
+#if UNITY_ANDROID
+        mobileControls.SetActive(true);
+        mobileTutorialUI.SetActive(true);
+        tutorialUI.SetActive(false);
+#else
+        mobileControls.SetActive(false);
+        mobileTutorialUI.SetActive(false);
+        tutorialUI.SetActive(true);
+#endif
     }
 
     void Update()

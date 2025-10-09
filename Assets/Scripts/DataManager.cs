@@ -7,8 +7,6 @@ public class DataManager : MonoBehaviour
     [HideInInspector] public float musicVolume = 0.5f;
     [HideInInspector] public float effectsVolume = 0.5f;
 
-    [SerializeField] Texture2D cursorTex;
-
     public static DataManager Instance;
 
     void Awake()
@@ -24,13 +22,6 @@ public class DataManager : MonoBehaviour
 
         // Set max frame rate
         Application.targetFrameRate = 60;
-#if UNITY_ANDROID
-        Application.targetFrameRate = 30;
-#endif
-
-        // Change cursor
-        Vector2 hotspot = new Vector2(cursorTex.width / 2, cursorTex.height / 2);
-        Cursor.SetCursor(cursorTex, hotspot, CursorMode.Auto);
     }
 
     // Try to set new high score and get success or failure result via bool return

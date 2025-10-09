@@ -8,8 +8,10 @@ public class ShieldButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
 
     void LateUpdate()
     {
-        IsShieldStarted = false;
-        IsShieldReleased = false;
+        if (IsShieldStarted)
+            IsShieldStarted = false;
+        if (IsShieldReleased)
+            IsShieldReleased = false;
     }
 
     public void OnPointerDown(PointerEventData eventData)

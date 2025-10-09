@@ -8,7 +8,7 @@ public class SpawnManager : MonoBehaviour
     private readonly List<GameObject> enemyPool = new List<GameObject>();
 
     [Space]
-    [SerializeField] float preSpawnDelay = 5.0f;
+    public float preSpawnDelay = 5.0f;
     [SerializeField] float spawnDelayStart = 3.0f;
     [SerializeField] float spawnDelayReduce = 0.5f;
     [SerializeField] float spawnDelayMin = 0.5f;
@@ -49,6 +49,7 @@ public class SpawnManager : MonoBehaviour
 
         // Wait a few seconds at the start (for tutorial to end)
         yield return new WaitForSeconds(preSpawnDelay);
+        AudioManager.Instance.StartBGM();
 
         // Loop to spawn single enemies continuously with a delay in between
         while (gm.isGameActive)
