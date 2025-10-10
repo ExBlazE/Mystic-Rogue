@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class InputHandler : MonoBehaviour
 {
@@ -42,9 +43,13 @@ public class InputHandler : MonoBehaviour
             IsShieldReleased = true;
 #elif UNITY_ANDROID
         SetSmoothMove();
-        SetSmoothAim();
-
-        IsShooting = aimStick.IsShooting;
+        if (aimStick.IsBeingUsed)
+        {
+            SetJoystickAim();
+            IsShooting = aimStick.IsShooting;
+        }
+        else
+            SetTapAim();
 
         IsShieldStarted = shieldButton.IsShieldStarted;
         IsShieldReleased = shieldButton.IsShieldReleased;
@@ -87,11 +92,45 @@ public class InputHandler : MonoBehaviour
         MoveDirection = new Vector2 (newX, newY);
     }
 
-    void SetSmoothAim()
+    void SetJoystickAim()
     {
         float xDirection = aimStick.Direction.x;
         float yDirection = aimStick.Direction.y;
         AimDirection = new Vector3 (xDirection, 0, yDirection);
+    }
+
+    void SetTapAim()
+    {
+        if (Input.touchCount > 0)
+        {
+            Touch touch;
+            for (int i = 0; i < Input.touchCount; i++)
+            {
+                touch = Input.GetTouch(i);
+                if (!EventSystem.current.IsPointerOverGameObject(touch.fingerId) && touch.fingerId != moveStick.pointerId)
+                {
+                    if (touch.phase != TouchPhase.Ended)
+                    {
+                        Ray ray = Camera.main.ScreenPointToRay(touch.position);
+                        RaycastHit hit;
+
+                        // Cast the ray until it hits an object in the selected layers
+                        if (Physics.Raycast(ray, out hit, Mathf.Infinity, targetLayers))
+                        {
+                            Vector3 touchPosition = hit.point;
+                            AimDirection = touchPosition - orbFocus.transform.position;
+                            IsShooting = true;
+                        }
+                    }
+                    else
+                        IsShooting = false;
+
+                    return;
+                }
+            }
+        }
+        else
+            IsShooting = false;
     }
 #endif
 }

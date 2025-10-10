@@ -4,6 +4,7 @@ using UnityEngine.EventSystems;
 public class MoveStick : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler
 {
     public Vector2 Direction { get; private set; } = Vector2.zero;
+    public int pointerId { get; private set; } = -1;
 
     RectTransform moveRect;
     float maxRadius;
@@ -18,6 +19,7 @@ public class MoveStick : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, 
 
     public void OnPointerDown(PointerEventData eventData)
     {
+        pointerId = eventData.pointerId;
         OnDrag(eventData);
     }
 
@@ -35,5 +37,6 @@ public class MoveStick : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, 
     public void OnPointerUp(PointerEventData eventData)
     {
         Direction = Vector2.zero;
+        pointerId = -1;
     }
 }

@@ -1,11 +1,19 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
+public enum ShootMode
+{
+    OnMaxDrag,
+    OnAim
+}
+
 public class AimStick : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler
 {
     public Vector2 Direction { get; private set; } = Vector2.zero;
     public bool IsShooting { get; private set; } = false;
+    public bool IsBeingUsed { get; private set; } = false;
 
+    ShootMode shootMode = ShootMode.OnMaxDrag;
     RectTransform aimRect;
     float maxRadius;
 
@@ -17,6 +25,9 @@ public class AimStick : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, I
 
     public void OnPointerDown(PointerEventData eventData)
     {
+        if (shootMode == ShootMode.OnAim)
+            IsShooting = true;
+        IsBeingUsed = true;
         OnDrag(eventData);
     }
 
@@ -28,10 +39,8 @@ public class AimStick : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, I
         {
             Vector2 scaledDirection = position / maxRadius;
 
-            if (scaledDirection.magnitude > 1f)
-                IsShooting = true;
-            else
-                IsShooting = false;
+            if (shootMode == ShootMode.OnMaxDrag)
+                IsShooting = scaledDirection.magnitude > 1f ? true : false;
 
             Direction = scaledDirection.normalized;
         }
@@ -40,5 +49,14 @@ public class AimStick : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, I
     public void OnPointerUp(PointerEventData eventData)
     {
         IsShooting = false;
+        IsBeingUsed = false;
+    }
+
+    public void ChangeShootMode()
+    {
+        if (shootMode == ShootMode.OnMaxDrag)
+            shootMode = ShootMode.OnAim;
+        else if (shootMode == ShootMode.OnAim)
+            shootMode= ShootMode.OnMaxDrag;
     }
 }
