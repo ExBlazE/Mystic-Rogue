@@ -13,6 +13,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] Slider healthSlider;
     [SerializeField] Slider shieldSlider;
     [SerializeField] GameObject mobileControls;
+    [SerializeField] GameObject aimingArrow;
 
     [Header("Tutorial UI")]
     [SerializeField] GameObject tutorialUI;
@@ -62,11 +63,7 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
 
         // Set max frame rate
-#if UNITY_ANDROID
-        Application.targetFrameRate = 30;
-#else
         Application.targetFrameRate = 60;
-#endif
     }
 
     void Start()
@@ -107,10 +104,12 @@ public class GameManager : MonoBehaviour
 #if UNITY_ANDROID
         mobileControls.SetActive(true);
         mobileTutorialUI.SetActive(true);
+        aimingArrow.SetActive(true);
         tutorialUI.SetActive(false);
 #else
         mobileControls.SetActive(false);
         mobileTutorialUI.SetActive(false);
+        aimingArrow.SetActive(false);
         tutorialUI.SetActive(true);
 #endif
     }

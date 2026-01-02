@@ -21,11 +21,7 @@ public class DataManager : MonoBehaviour
             Destroy(gameObject);
 
         // Set max frame rate
-#if UNITY_ANDROID
-        Application.targetFrameRate = 30;
-#else
         Application.targetFrameRate = 60;
-#endif
     }
 
     // Try to set new high score and get success or failure result via bool return

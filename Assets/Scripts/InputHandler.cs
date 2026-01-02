@@ -56,6 +56,14 @@ public class InputHandler : MonoBehaviour
 #endif
     }
 
+    void LateUpdate()
+    {
+        if (IsShieldStarted)
+            IsShieldStarted = false;
+        if (IsShieldReleased)
+            IsShieldReleased = false;
+    }
+
 #if UNITY_STANDALONE || UNITY_WEBGL
     void SetMove()
     {
@@ -67,7 +75,8 @@ public class InputHandler : MonoBehaviour
     void SetAim()
     {
         // Draw a ray from camera through the mouse pointer
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        Vector3 mousePosOnGame = Camera.main.ScreenToViewportPoint(Input.mousePosition);
+        Ray ray = Camera.main.ViewportPointToRay(mousePosOnGame);
         RaycastHit hit;
 
         // Cast the ray until it hits an object in the selected layers
