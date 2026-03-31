@@ -23,6 +23,20 @@ public class AudioManager : MonoBehaviour
 
     public static AudioManager Instance;
 
+    void OnEnable()
+    {
+        GameEvents.OnShotFired += PlayShotStart;
+        GameEvents.OnShotHit += PlayShotHit;
+        GameEvents.OnShieldAppear += PlayShield;
+    }
+
+    void OnDisable()
+    {
+        GameEvents.OnShotFired -= PlayShotStart;
+        GameEvents.OnShotHit -= PlayShotHit;
+        GameEvents.OnShieldAppear -= PlayShield;
+    }
+
     void Awake()
     {
         // Create a singleton instance for this script
@@ -70,21 +84,22 @@ public class AudioManager : MonoBehaviour
         StartCoroutine(FadeBGM());
     }
 
-    // To be called when shooting a projectile
+    // Invoked when shooting a projectile
     public void PlayShotStart()
     {
         shotStart.PlayOneShot(shotStartClip);
         shotStart.volume = effectsVolume;
     }
 
-    // To be called when a projectile hits something
-    public void PlayShotHit()
+    // Invoked when a projectile hits something
+    // Ignore parameters
+    public void PlayShotHit(Vector3 _, Quaternion __, Target ___)
     {
         shotHit.PlayOneShot(shotHitClip);
         shotHit.volume = effectsVolume;
     }
 
-    // To be called when activating shield
+    // Invoked when activating shield
     public void PlayShield()
     {
         shield.PlayOneShot(shieldClip);

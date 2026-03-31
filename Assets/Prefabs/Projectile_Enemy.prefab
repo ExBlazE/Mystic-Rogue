@@ -84,6 +84,10 @@ PrefabInstance:
       propertyPath: m_Color.r
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 8205006219963308207, guid: 5cdc28a7d68d68944963c77b01aab20c, type: 3}
+      propertyPath: isPlayerSide
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8377088770022545807, guid: 5cdc28a7d68d68944963c77b01aab20c, type: 3}
       propertyPath: m_Name
       value: Projectile_Enemy

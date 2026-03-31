@@ -6,6 +6,8 @@ using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
+    [SerializeField] Player player;
+
     [Header("Game UI")]
     [SerializeField] GameObject gameUI;
     [SerializeField] TextMeshProUGUI timeText;
@@ -52,7 +54,6 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance;
 
     DataManager dm;
-    PlayerControl player;
 
     void Awake()
     {
@@ -76,9 +77,6 @@ public class GameManager : MonoBehaviour
             effectsVolumeSlider.value = dm.effectsVolume;
         }
 
-        // Get singleton reference for PlayerControl
-        player = PlayerControl.Instance;
-
         // Set initial state of the game
         isGameActive = true;
         isGamePaused = false;
@@ -93,8 +91,8 @@ public class GameManager : MonoBehaviour
 
         // Set shield UI
         shieldSlider.minValue = 0f;
-        shieldSlider.maxValue = player.maxShield;
-        shieldSlider.value = player.shield;
+        shieldSlider.maxValue = player.maxEnergy;
+        shieldSlider.value = player.energy;
 
         // Enable and disable all relevant UI as needed
         gameUI.SetActive(true);
@@ -118,7 +116,7 @@ public class GameManager : MonoBehaviour
     {
         // Update Health and Shield UI
         healthSlider.value = player.health;
-        shieldSlider.value = player.shield;
+        shieldSlider.value = player.energy;
 
         // Update the time and score UI every frame
         UpdateTime();

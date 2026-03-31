@@ -2,28 +2,22 @@ using UnityEngine;
 
 public class Projectile : MonoBehaviour
 {
+    [SerializeField] bool isPlayerSide;
+
+    [Space]
     [SerializeField] float speed = 15f;
-    [SerializeField] float duration = 3f;
+    [SerializeField] float maxDuration = 3f;
+    private float aliveDuration;
 
     [Space]
-    [SerializeField] float enemyShotDamage = 10;
-
-    [Space]
-    [SerializeField] ParticleSystem playerHitFX;
-    [SerializeField] ParticleSystem shieldHitFX;
-    [SerializeField] ParticleSystem enemyHitFX;
+    [SerializeField] float damage = 10;
 
     private bool hasCollided = false;
 
-    GameManager gm;
-    AudioManager am;
-    PlayerControl player;
-
-    void Start()
+    void OnEnable()
     {
-        gm = GameManager.Instance;
-        am = AudioManager.Instance;
-        player = PlayerControl.Instance;
+        aliveDuration = maxDuration;
+        hasCollided = false;
     }
 
     void Update()
@@ -32,13 +26,13 @@ public class Projectile : MonoBehaviour
         transform.Translate(Vector3.forward * speed * Time.deltaTime);
 
         // Destroy projectile after set duration
-        if (duration > 0)
+        if (aliveDuration > 0)
         {
-            duration -= Time.deltaTime;
+            aliveDuration -= Time.deltaTime;
         }
         else
         {
-            Destroy(gameObject);
+            gameObject.SetActive(false);
         }
     }
 
@@ -48,51 +42,15 @@ public class Projectile : MonoBehaviour
         if (hasCollided)
             return;
 
-        // Logic for player projectiles hitting enemies
-        if (gameObject.CompareTag("Shot_Player") && other.CompareTag("Enemy"))
+        if (other.TryGetComponent<IDamageable>(out var target))
         {
-            hasCollided = true;
-
-            Enemy enemy = other.GetComponent<Enemy>();
-            enemy.OnHit();
-
-            Transform particlesGroup = gm.particlesGroup;
-            Instantiate(playerHitFX, transform.position, transform.rotation, particlesGroup);
-
-            Destroy(gameObject);
-
-            am.PlayShotHit();
-        }
-
-        // Logic for enemy projectiles
-        else if (gameObject.CompareTag("Shot_Enemy"))
-        {
-            // Logic for hitting shield
-            if (other.CompareTag("Shield"))
+            bool isFriendlyFire = (this.isPlayerSide == target.IsPlayerSide);
+            if (!isFriendlyFire)
             {
                 hasCollided = true;
-
-                Transform particlesGroup = gm.particlesGroup;
-                Instantiate(shieldHitFX, transform.position, transform.rotation, particlesGroup);
-
-                player.ModifyShield(-enemyShotDamage);
-                Destroy(gameObject);
-                
-                am.PlayShotHit();
-            }
-
-            //Logic for hitting player
-            else if (other.CompareTag("Player"))
-            {
-                hasCollided = true;
-
-                Transform particlesGroup = gm.particlesGroup;
-                Instantiate(enemyHitFX, transform.position, transform.rotation, particlesGroup);
-
-                player.ModifyHealth(-enemyShotDamage);
-                Destroy(gameObject);
-                
-                am.PlayShotHit();
+                target.OnHit(damage);
+                GameEvents.ShotHit(transform.position, transform.rotation, target.TargetType);
+                gameObject.SetActive(false);
             }
         }
     }

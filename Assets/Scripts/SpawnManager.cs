@@ -1,11 +1,11 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class SpawnManager : MonoBehaviour
 {
-    [SerializeField] GameObject enemyPrefab;
-    private readonly List<GameObject> enemyPool = new List<GameObject>();
+    [SerializeField] ObjectPooler enemyPool;
+    [SerializeField] ObjectPooler enemyProjectilePool;
+    [SerializeField] Player playerRef;
 
     [Space]
     public float preSpawnDelay = 5.0f;
@@ -25,17 +25,6 @@ public class SpawnManager : MonoBehaviour
     {
         // Get reference to singleton
         gm = GameManager.Instance;
-
-        // Set enemy pool size as more than max enemies as a safety buffer
-        int poolSize = gm.maxEnemies + 5;
-
-        // Create an enemy pool
-        for (int i = 0; i < poolSize; i++)
-        {
-            GameObject enemy = Instantiate(enemyPrefab, gm.enemyGroup);
-            enemy.SetActive(false);
-            enemyPool.Add(enemy);
-        }
 
         // Start coroutine to spawn enemies
         StartCoroutine(EnemySpawner());
@@ -84,7 +73,7 @@ public class SpawnManager : MonoBehaviour
     void SpawnEnemy()
     {
         // Get player position via singleton
-        Vector3 playerPosition = PlayerControl.Instance.transform.position;
+        Vector3 playerPosition = playerRef.transform.position;
 
         // Get random direction from player and set vector magnitude to 1
         Vector3 randomDirection = new Vector3(Random.Range(-1f, 1f), 0, Random.Range(-1f, 1f));
@@ -94,25 +83,12 @@ public class SpawnManager : MonoBehaviour
         Vector3 spawnPosition = playerPosition + (randomDirection * spawnDistance);
 
         // Get new enemy from the pool, set its position and increment enemy count
-        GameObject newEnemy = GetEnemyFromPool();
+        GameObject newEnemy = enemyPool.GetFromPool();
         if (newEnemy != null)
         {
             newEnemy.transform.position = spawnPosition;
+            newEnemy.GetComponent<Enemy>().Initialize(playerRef, enemyProjectilePool);
             gm.enemiesOnScreen++;
         }
-    }
-
-    // Method to get an enemy from the pool
-    private GameObject GetEnemyFromPool()
-    {
-        for (int i = 0; i < enemyPool.Count; i++)
-        {
-            if (!enemyPool[i].activeSelf)
-            {
-                enemyPool[i].SetActive(true);
-                return enemyPool[i];
-            }
-        }
-        return null;
     }
 }

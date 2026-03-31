@@ -1,31 +1,29 @@
 using UnityEngine;
 
-public class Enemy : MonoBehaviour
+public class Enemy : MonoBehaviour, IDamageable
 {
+    public bool IsPlayerSide => false;
+    public Target TargetType => Target.Enemy;
+
     [SerializeField] GameObject focus;
     public bool canMove = true;
     [SerializeField] float moveSpeed = 2.5f;
 
     [Space]
-    [SerializeField] GameObject projectilePrefab;
+    [SerializeField] ObjectPooler projectilePool;
     public bool canShoot = true;
     [SerializeField] float shotRange = 15f;
     [SerializeField] float shotCooldown = 2.5f;
     [SerializeField] float collisionDamage = 20f;
 
+    private float shotRangeSqr;
     private float currentCooldown = 0f;
 
     [Space]
     [SerializeField] Animator enemyAnim;
 
-    [Space]
-    [SerializeField] ParticleSystem playerCollideFX;
-    [SerializeField] ParticleSystem shieldCollideFX;
-
+    private Player playerRef;
     private Rigidbody enemyRb;
-
-    PlayerControl player;
-    GameManager gm;
     
     void Awake()
     {
@@ -35,26 +33,20 @@ public class Enemy : MonoBehaviour
 
     void Start()
     {
-        player = PlayerControl.Instance;
-        gm = GameManager.Instance;
+        // Square the shot range distance
+        shotRangeSqr = shotRange * shotRange;
     }
 
     void Update()
     {
-        // Calculate square of shot range
-        float shotRangeSqr = shotRange * shotRange;
-
         // Calculate distance-squared to player
-        float distanceToPlayerSqr = (player.transform.position - transform.position).sqrMagnitude;
+        float distanceToPlayerSqr = (playerRef.transform.position - transform.position).sqrMagnitude;
 
         // If within range and cooldown is zero, shoot projectile
         // We compare square of both numbers because Vector3.magnitude takes more time for CPU
-        if (distanceToPlayerSqr < shotRangeSqr)
+        if (canShoot && currentCooldown == 0 && distanceToPlayerSqr < shotRangeSqr)
         {
-            if (currentCooldown == 0 && canShoot)
-            {
-                ShootProjectile();
-            }
+            ShootProjectile();
         }
 
         // Reduce cooldown to zero
@@ -80,7 +72,7 @@ public class Enemy : MonoBehaviour
         if (canMove)
         {
             // Get direction of player from enemy position
-            Vector3 direction = player.transform.position - enemyRb.position;
+            Vector3 direction = playerRef.transform.position - enemyRb.position;
 
             // Create new rotation facing player and apply it to enemy
             Quaternion targetRotation = Quaternion.LookRotation(direction);
@@ -100,56 +92,70 @@ public class Enemy : MonoBehaviour
     // Method to shoot projectile
     void ShootProjectile()
     {
-        // Get spawn position, rotation, parent transform
+        // Get spawn position and rotation
         Vector3 spawnPos = focus.transform.position;
         Quaternion spawnRot = transform.rotation;
-        Transform spawnParent = gm.projectileGroup;
 
         // Spawn projectile and start cooldown
-        Instantiate(projectilePrefab, spawnPos, spawnRot, spawnParent);
+        GameObject projectile = projectilePool.GetFromPool();
+        projectile.transform.position = spawnPos;
+        projectile.transform.rotation = spawnRot;
+
         currentCooldown = shotCooldown;
     }
 
     // Logic to handle enemy touching player
     void OnCollisionEnter(Collision collision)
     {
+        bool isDamageable = collision.gameObject.TryGetComponent<IDamageable>(out var target);
+
+        if (!isDamageable)
+            return;
+
+        bool isPlayerSide = target.IsPlayerSide;
+        bool isPlayer = collision.gameObject.CompareTag("Player");
+
         // If touching player, deplete health
-        if (collision.gameObject.CompareTag("Player"))
+        if (isDamageable && isPlayerSide && isPlayer)
         {
-            // Execute collision logic and reduce player health
-            PlayCollisionFX(playerCollideFX);
-            OnHit();
-            player.ModifyHealth(-collisionDamage);
+            target.OnHit(collisionDamage);
+            this.OnHit();
+
+            GameEvents.ShotHit(focus.transform.position, transform.rotation, Target.Player);
         }
     }
 
     // Logic to handle enemy touching shield
     void OnTriggerEnter(Collider other)
     {
+        bool isDamageable = other.TryGetComponent<IDamageable>(out var target);
+
+        if (!isDamageable)
+            return;
+
+        bool isPlayerSide = target.IsPlayerSide;
+        bool isShield = other.CompareTag("Shield");
+
         // If touching shield, deplete shield
-        if (other.CompareTag("Shield"))
+        if (isDamageable && isPlayerSide && isShield)
         {
-            // Execute collision logic and reduce player shield
-            PlayCollisionFX(shieldCollideFX);
-            OnHit();
-            player.ModifyShield(-collisionDamage);
+            target.OnHit(collisionDamage);
+            this.OnHit();
+
+            GameEvents.ShotHit(focus.transform.position, transform.rotation, Target.Shield);
         }
     }
 
-    void PlayCollisionFX(ParticleSystem collisionParticles)
-    {
-        // Create hit effects
-        Transform particlesGroup = gm.particlesGroup;
-        Instantiate(collisionParticles, focus.transform.position, transform.rotation, particlesGroup);
-
-        // Play collision sound
-        AudioManager.Instance.PlayShotHit();
-    }
-
-    public void OnHit()
+    public void OnHit(float damage = default)
     {
         gameObject.SetActive(false);
-        gm.enemiesOnScreen--;
-        gm.AddScore(1);
+        GameManager.Instance.enemiesOnScreen--;
+        GameManager.Instance.AddScore(1);
+    }
+
+    public void Initialize(Player playerRef, ObjectPooler projectilePool)
+    {
+        this.playerRef = playerRef;
+        this.projectilePool = projectilePool;
     }
 }
