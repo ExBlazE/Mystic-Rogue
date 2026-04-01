@@ -36,7 +36,7 @@ public class Player : MonoBehaviour, IDamageable
     void Update()
     {
         // Energy and shield logic to run only when game is active and unpaused
-        if (GameManager.Instance.isGameActive && !GameManager.Instance.isGamePaused)
+        if (GameManager.Instance.gameState == GameState.Playing)
         {
             // Disable shield when zero
             if (energy == 0 && shield.isShieldActive)
@@ -66,9 +66,6 @@ public class Player : MonoBehaviour, IDamageable
                 float shieldRegen = shieldRegenPerSecond * Time.deltaTime;
                 ModifyEnergy(shieldRegen);
             }
-
-            if (health <= 0)
-                GameManager.Instance.EndGame();
         }
     }
 
@@ -87,6 +84,11 @@ public class Player : MonoBehaviour, IDamageable
             health = 0;
         else if (health > maxHealth)
             health = maxHealth;
+
+        GameEvents.RaiseOnHealthChanged(health);
+
+        if (health <= 0)
+            GameEvents.RaiseOnPlayerDeath();
     }
 
     // Method to add or remove shield
@@ -99,5 +101,7 @@ public class Player : MonoBehaviour, IDamageable
             energy = 0;
         else if (energy > maxEnergy)
             energy = maxEnergy;
+
+        GameEvents.RaiseOnEnergyChanged(energy);
     }
 }

@@ -31,6 +31,7 @@ public class Shield : MonoBehaviour, IDamageable
         isShieldActive = false;
         shieldCollider.enabled = false;
         shieldRenderer.material.SetFloat(shieldAlphaName, 0f);
+        shieldRenderer.enabled = false;
     }
 
     public void OnHit(float damage)
@@ -45,7 +46,7 @@ public class Shield : MonoBehaviour, IDamageable
             if (player.energy > 0)
             {
                 StartCoroutine(ToggleShield(shieldState));
-                GameEvents.ShieldAppear();
+                GameEvents.RaiseOnShieldAppear();
             }
             else
                 return;

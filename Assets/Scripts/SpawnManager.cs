@@ -6,26 +6,35 @@ public class SpawnManager : MonoBehaviour
     [SerializeField] ObjectPooler enemyPool;
     [SerializeField] ObjectPooler enemyProjectilePool;
     [SerializeField] Player playerRef;
+    [SerializeField] SessionStats sessionStats;
 
     [Space]
-    public float preSpawnDelay = 5.0f;
+    [SerializeField] float preSpawnDelay = 5.0f;
     [SerializeField] float spawnDelayStart = 3.0f;
     [SerializeField] float spawnDelayReduce = 0.5f;
     [SerializeField] float spawnDelayMin = 0.5f;
 
     [Space]
     [SerializeField] int stageLength = 20;
+    [SerializeField] int maxEnemies = 20;
 
     [Space]
     [SerializeField] float spawnDistance = 25f;
 
-    private GameManager gm;
+    private int enemiesOnScreen = 0;
+
+    void OnEnable()
+    {
+        GameEvents.OnEnemyDeath += EnemyDeath;
+    }
+
+    void OnDisable()
+    {
+        GameEvents.OnEnemyDeath -= EnemyDeath;
+    }
 
     void Start()
     {
-        // Get reference to singleton
-        gm = GameManager.Instance;
-
         // Start coroutine to spawn enemies
         StartCoroutine(EnemySpawner());
     }
@@ -38,13 +47,13 @@ public class SpawnManager : MonoBehaviour
 
         // Wait a few seconds at the start (for tutorial to end)
         yield return new WaitForSeconds(preSpawnDelay);
-        AudioManager.Instance.StartBGM();
+        GameEvents.RaiseOnGameStart();
 
         // Loop to spawn single enemies continuously with a delay in between
-        while (gm.isGameActive)
+        while (GameManager.Instance.gameState != GameState.GameOver)
         {
             // Do not spawn more than max number of enemies
-            while (gm.enemiesOnScreen >= gm.maxEnemies)
+            while (enemiesOnScreen >= maxEnemies)
             {
                 yield return null;
             }
@@ -53,7 +62,7 @@ public class SpawnManager : MonoBehaviour
             SpawnEnemy();
 
             // Get the current difficulty stage
-            int newStage = (int)((gm.timeAlive - preSpawnDelay) / stageLength);
+            int newStage = (int)((sessionStats.timeAlive - preSpawnDelay) / stageLength);
 
             // If stage advances, set new stage and reduce delay between enemy spawns
             if (currentStage < newStage)
@@ -88,7 +97,10 @@ public class SpawnManager : MonoBehaviour
         {
             newEnemy.transform.position = spawnPosition;
             newEnemy.GetComponent<Enemy>().Initialize(playerRef, enemyProjectilePool);
-            gm.enemiesOnScreen++;
+            enemiesOnScreen++;
         }
     }
+
+    void EnemyDeath(int _)
+    { enemiesOnScreen--; }
 }

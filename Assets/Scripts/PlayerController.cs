@@ -40,7 +40,7 @@ public class PlayerController : MonoBehaviour
         SetMoveAnimParam();
 
         // Main player control logic to only run when game is active and not paused
-        if (GameManager.Instance.isGameActive && !GameManager.Instance.isGamePaused)
+        if (GameManager.Instance.gameState == GameState.Playing)
         {
             // Rotate orb to face mouse position
             MoveOrb();
@@ -131,6 +131,6 @@ public class PlayerController : MonoBehaviour
         currentShotCooldown = shotCooldown;
 
         // Fire an event to indicate projectile fired
-        GameEvents.ShotFired();
+        GameEvents.RaiseOnShotFired();
     }
 }

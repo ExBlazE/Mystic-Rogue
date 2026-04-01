@@ -1,61 +1,67 @@
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.SceneManagement;
 
 public class UIManager : MonoBehaviour
 {
-    [SerializeField] TextMeshProUGUI highScoreText;
-    [SerializeField] Slider musicVolumeSlider;
-    [SerializeField] Slider effectsVolumeSlider;
-    [SerializeField] Button exitButton;
-    [SerializeField] GameObject creditsScreen;
+    [SerializeField] GameObject pauseMenu;
+    [SerializeField] GameObject gameOverScreen;
+    [SerializeField] TextMeshProUGUI finalScoreText;
+    [SerializeField] GameObject newHighScoreText;
 
-    DataManager dm;
+    [Space]
+    [SerializeField] GameObject keyboardTutorial;
+    [SerializeField] GameObject mobileTutorial;
+
+    [Space]
+    [SerializeField] GameObject mobileControls;
+    [SerializeField] GameObject aimingArrow;
+
+    void OnEnable()
+    {
+        GameEvents.OnGamePause += ShowPauseMenu;
+        GameEvents.OnGameResume += HidePauseMenu;
+        GameEvents.OnGameOver += ShowGameOverScreen;
+    }
+
+    void OnDisable()
+    {
+        GameEvents.OnGamePause -= ShowPauseMenu;
+        GameEvents.OnGameResume -= HidePauseMenu;
+        GameEvents.OnGameOver -= ShowGameOverScreen;
+    }
 
     void Start()
     {
-        // Get singleton reference to DataManager
-        dm = DataManager.Instance;
+        pauseMenu.SetActive(false);
+        gameOverScreen.SetActive(false);
+        newHighScoreText.SetActive(false);
 
-        // Load saved high score and volume
-        dm.LoadData();
-
-        // Set volume sliders at previously set value
-        musicVolumeSlider.value = dm.musicVolume;
-        effectsVolumeSlider.value = dm.effectsVolume;
-
-#if UNITY_WEBGL
-        // On WebGL build, hide the exit button
-        exitButton.interactable = false;
+#if UNITY_STANDALONE || UNITY_WEBGL
+        keyboardTutorial.SetActive(true);
+        mobileTutorial.SetActive(false);
+        mobileControls.SetActive(false);
+        aimingArrow.SetActive(false);
+#elif UNITY_ANDROID
+        keyboardTutorial.SetActive(false);
+        mobileTutorial.SetActive(true);
+        mobileControls.SetActive(true);
+        aimingArrow.SetActive(true);
 #endif
     }
 
-    void Update()
-    {
-        // Update high score display in real time
-        highScoreText.SetText(dm.GetHighScore().ToString("D2"));
-    }
+    void ShowPauseMenu()
+    { pauseMenu.SetActive(true); }
 
-    public void StartButton()
-    {
-        dm.SaveData();
-        SceneManager.LoadScene(1);
-    }
+    void HidePauseMenu()
+    { pauseMenu.SetActive(false); }
 
-    // Conditional compilation code written to test exit button in the editor
-    public void ExitButton()
+    void ShowGameOverScreen()
     {
-        dm.SaveData();
-#if UNITY_EDITOR
-        UnityEditor.EditorApplication.ExitPlaymode();
-#else
-        Application.Quit();
-#endif
-    }
+        gameOverScreen.SetActive(true);
 
-    public void ToggleCredits()
-    {
-        creditsScreen.SetActive(!creditsScreen.activeSelf);
+        SessionStats stats = FindFirstObjectByType<SessionStats>();
+        finalScoreText.SetText(stats.score.ToString("D2"));
+        if (stats.newHighScore)
+            newHighScoreText.SetActive(true);
     }
 }

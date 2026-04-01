@@ -121,7 +121,7 @@ public class Enemy : MonoBehaviour, IDamageable
             target.OnHit(collisionDamage);
             this.OnHit();
 
-            GameEvents.ShotHit(focus.transform.position, transform.rotation, Target.Player);
+            GameEvents.RaiseOnShotHit(focus.transform.position, transform.rotation, Target.Player);
         }
     }
 
@@ -142,15 +142,14 @@ public class Enemy : MonoBehaviour, IDamageable
             target.OnHit(collisionDamage);
             this.OnHit();
 
-            GameEvents.ShotHit(focus.transform.position, transform.rotation, Target.Shield);
+            GameEvents.RaiseOnShotHit(focus.transform.position, transform.rotation, Target.Shield);
         }
     }
 
     public void OnHit(float damage = default)
     {
         gameObject.SetActive(false);
-        GameManager.Instance.enemiesOnScreen--;
-        GameManager.Instance.AddScore(1);
+        GameEvents.RaiseOnEnemyDeath(1);
     }
 
     public void Initialize(Player playerRef, ObjectPooler projectilePool)

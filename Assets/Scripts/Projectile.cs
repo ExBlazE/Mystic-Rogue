@@ -49,7 +49,7 @@ public class Projectile : MonoBehaviour
             {
                 hasCollided = true;
                 target.OnHit(damage);
-                GameEvents.ShotHit(transform.position, transform.rotation, target.TargetType);
+                GameEvents.RaiseOnShotHit(transform.position, transform.rotation, target.TargetType);
                 gameObject.SetActive(false);
             }
         }

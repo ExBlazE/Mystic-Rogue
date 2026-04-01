@@ -6,28 +6,27 @@ public class AudioManager : MonoBehaviour
     [Header("BGM")]
     [SerializeField] AudioSource backgroundMusic;
     [SerializeField] float musicEndFadeTime = 3f;
-    [SerializeField][Range(0, 1)]
-    float musicVolume = 0.5f;
 
     [Header("Effects")]
     [SerializeField] AudioSource shotStart;
     [SerializeField] AudioSource shotHit;
     [SerializeField] AudioSource shield;
-    [SerializeField][Range(0, 1)]
-    float effectsVolume = 0.5f;
 
     [Header("Clips to use")]
     [SerializeField] AudioClip shotStartClip;
     [SerializeField] AudioClip shotHitClip;
     [SerializeField] AudioClip shieldClip;
 
-    public static AudioManager Instance;
-
     void OnEnable()
     {
         GameEvents.OnShotFired += PlayShotStart;
         GameEvents.OnShotHit += PlayShotHit;
         GameEvents.OnShieldAppear += PlayShield;
+
+        GameEvents.OnGameStart += StartBGM;
+        GameEvents.OnGamePause += PauseBGM;
+        GameEvents.OnGameResume += UnPauseBGM;
+        GameEvents.OnPlayerDeath += EndBGM;
     }
 
     void OnDisable()
@@ -35,60 +34,42 @@ public class AudioManager : MonoBehaviour
         GameEvents.OnShotFired -= PlayShotStart;
         GameEvents.OnShotHit -= PlayShotHit;
         GameEvents.OnShieldAppear -= PlayShield;
-    }
 
-    void Awake()
-    {
-        // Create a singleton instance for this script
-        if (Instance == null)
-            Instance = this;
-        else
-            Destroy(gameObject);
+        GameEvents.OnGameStart -= StartBGM;
+        GameEvents.OnGamePause -= PauseBGM;
+        GameEvents.OnGameResume -= UnPauseBGM;
+        GameEvents.OnPlayerDeath -= EndBGM;
     }
 
     void Start()
     {
-        // If started game from main menu, get initial volumes
         if (DataManager.Instance != null)
         {
-            musicVolume = DataManager.Instance.musicVolume;
-            effectsVolume = DataManager.Instance.effectsVolume;
+            Globals.musicVolume = 0.5f;
+            Globals.effectsVolume = 0.5f;
         }
-    }
-
-    void Update()
-    {
-        // Change music volume in real time
-        if (GameManager.Instance.isGameActive)
-            backgroundMusic.volume = musicVolume;
     }
 
     public void StartBGM()
     {
         backgroundMusic.Play();
-        backgroundMusic.volume = musicVolume;
+        backgroundMusic.volume = Globals.musicVolume;
     }
 
     public void PauseBGM()
-    {
-        backgroundMusic.Pause();
-    }
+    { backgroundMusic.Pause(); }
 
     public void UnPauseBGM()
-    {
-        backgroundMusic.UnPause();
-    }
+    { backgroundMusic.UnPause(); }
 
     public void EndBGM()
-    {
-        StartCoroutine(FadeBGM());
-    }
+    { StartCoroutine(FadeBGM()); }
 
     // Invoked when shooting a projectile
     public void PlayShotStart()
     {
         shotStart.PlayOneShot(shotStartClip);
-        shotStart.volume = effectsVolume;
+        shotStart.volume = Globals.effectsVolume;
     }
 
     // Invoked when a projectile hits something
@@ -96,27 +77,26 @@ public class AudioManager : MonoBehaviour
     public void PlayShotHit(Vector3 _, Quaternion __, Target ___)
     {
         shotHit.PlayOneShot(shotHitClip);
-        shotHit.volume = effectsVolume;
+        shotHit.volume = Globals.effectsVolume;
     }
 
     // Invoked when activating shield
     public void PlayShield()
     {
         shield.PlayOneShot(shieldClip);
-        shield.volume = effectsVolume;
+        shield.volume = Globals.effectsVolume;
     }
 
-    // Method for use by music volume slider
+    // Method for use by music volume slider. Assign in inspector with Dynamic Float.
     public void SetMusicVolume(float volume)
-    {
-        musicVolume = volume;
+    { 
+        Globals.musicVolume = volume;
+        backgroundMusic.volume = volume;
     }
 
-    // Method for use by effects volume slider
+    // Method for use by effects volume slider. Assign in inspector with Dynamic Float.
     public void SetEffectsVolume(float volume)
-    {
-        effectsVolume = volume;
-    }
+    { Globals.effectsVolume = volume; }
 
     // Fade out the BGM over given duration. To be called on game over.
     IEnumerator FadeBGM()
