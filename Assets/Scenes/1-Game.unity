@@ -14284,7 +14284,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 2147483647
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &939074940
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19565,6 +19565,7 @@ MonoBehaviour:
   targetLayers:
     serializedVersion: 2
     m_Bits: 64
+  dirSnapSpeed: 3
   moveStick: {fileID: 726504773}
   aimStick: {fileID: 1658919845}
   shieldButton: {fileID: 1368280191}

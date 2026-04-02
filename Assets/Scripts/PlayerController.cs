@@ -9,6 +9,7 @@ public class PlayerController : MonoBehaviour
     [Header("Movement")]
     [SerializeField] Animator playerAnim;
     [SerializeField] float moveSpeed = 5f;
+    private Vector2 currentMoveDirection = Vector2.zero;
 
     [Header("Shooting")]
     [SerializeField] ObjectPooler projectilePool;
@@ -18,13 +19,33 @@ public class PlayerController : MonoBehaviour
     [Header("Shield")]
     [SerializeField] Shield shield;
 
-    private InputHandler user;
+    private InputHandler input;
     private Rigidbody playerRb;
+
+    void OnEnable()
+    {
+        input.OnMove += HandleMove;
+        input.OnAim += MoveOrb;
+        input.OnShoot += ShootProjectile;
+        input.OnShield += HandleShield;
+
+        GameEvents.OnGameResume += ForceDisableShield;
+    }
+
+    void OnDisable()
+    {
+        input.OnMove -= HandleMove;
+        input.OnAim -= MoveOrb;
+        input.OnShoot -= ShootProjectile;
+        input.OnShield -= HandleShield;
+
+        GameEvents.OnGameResume -= ForceDisableShield;
+    }
 
     void Awake()
     {
         // Get reference to other components
-        user = GetComponent<InputHandler>();
+        input = GetComponent<InputHandler>();
         playerRb = GetComponent<Rigidbody>();
     }
 
@@ -36,43 +57,17 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        if (GameManager.Instance.gameState != GameState.Playing) return;
+
         // Set animator parameters
         SetMoveAnimParam();
 
-        // Main player control logic to only run when game is active and not paused
-        if (GameManager.Instance.gameState == GameState.Playing)
+        // Reduce shot cooldown to zero
+        if (currentShotCooldown > 0)
         {
-            // Rotate orb to face mouse position
-            MoveOrb();
-
-            // Shoot projectile on left-click and when cooldown is zero
-            if (user.IsShooting && currentShotCooldown == 0)
-            {
-                ShootProjectile();
-            }
-
-            // Reduce shot cooldown to zero
-            if (currentShotCooldown > 0)
-            {
-                currentShotCooldown -= Time.deltaTime;
-                if (currentShotCooldown < 0)
-                    currentShotCooldown = 0;
-            }
-
-            // Enable shield when right-click is clicked
-            if (user.IsShieldStarted)
-            {
-                if (!shield.isShieldActive)
-                {
-                    shield.Toggle(true);
-                }
-            }
-
-            // Disable shield when right-click is released
-            if (user.IsShieldReleased && shield.isShieldActive)
-            {
-                shield.Toggle(false);
-            }
+            currentShotCooldown -= Time.deltaTime;
+            if (currentShotCooldown < 0)
+                currentShotCooldown = 0;
         }
     }
 
@@ -82,10 +77,15 @@ public class PlayerController : MonoBehaviour
         Move();
     }
 
+    void HandleMove(Vector2 moveDirection)
+    { currentMoveDirection = moveDirection; }
+
     // Method to move player
     void Move()
     {
-        Vector3 movement = new Vector3(user.MoveDirection.x, 0, user.MoveDirection.y);
+        if (GameManager.Instance.gameState != GameState.Playing) return;
+
+        Vector3 movement = new Vector3(currentMoveDirection.x, 0, currentMoveDirection.y);
 
         // Clamp direction vector magnitude at 1 to prevent faster diagonal speed
         movement = Vector3.ClampMagnitude(movement, 1.0f);
@@ -95,11 +95,13 @@ public class PlayerController : MonoBehaviour
     }
 
     // Method to spin orb around player
-    void MoveOrb()
+    void MoveOrb(Vector3 aimDirection)
     {
-        if (user.AimDirection != Vector3.zero)
+        if (GameManager.Instance.gameState != GameState.Playing) return;
+
+        if (aimDirection != Vector3.zero)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(user.AimDirection);
+            Quaternion targetRotation = Quaternion.LookRotation(input.AimDirection);
             orbFocus.transform.rotation = Quaternion.Euler(0, targetRotation.eulerAngles.y, 0);
         }
     }
@@ -118,8 +120,11 @@ public class PlayerController : MonoBehaviour
         playerAnim.SetFloat("f_moveRight", localVelocity.x);
     }
 
-    private void ShootProjectile()
+    void ShootProjectile()
     {
+        if (GameManager.Instance.gameState != GameState.Playing) return;
+        if (currentShotCooldown != 0) return;
+
         // Get the spawn position and rotation
         Vector3 spawnPos = orbObject.transform.position;
         Quaternion spawnRot = orbFocus.transform.rotation;
@@ -133,4 +138,23 @@ public class PlayerController : MonoBehaviour
         // Fire an event to indicate projectile fired
         GameEvents.RaiseOnShotFired();
     }
+
+    void HandleShield(bool shieldEnable)
+    {
+        if (GameManager.Instance.gameState != GameState.Playing) return;
+
+        if (shieldEnable)
+        {
+            if (!shield.isShieldActive)
+                shield.Toggle(true);
+        }
+        else
+        {
+            if (shield.isShieldActive)
+                shield.Toggle(false);
+        }
+    }
+
+    void ForceDisableShield()
+    { HandleShield(false); }
 }
