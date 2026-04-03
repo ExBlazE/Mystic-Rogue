@@ -27,7 +27,7 @@ public class MainMenuManager : MonoBehaviour
 
 #if UNITY_WEBGL
         // On WebGL build, hide the exit button
-        exitButton.interactable = false;
+        exitButton.gameObject.SetActive(false);
 #endif
     }
 

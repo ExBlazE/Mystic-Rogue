@@ -101,7 +101,7 @@ public class PlayerController : MonoBehaviour
 
         if (aimDirection != Vector3.zero)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(input.AimDirection);
+            Quaternion targetRotation = Quaternion.LookRotation(aimDirection);
             orbFocus.transform.rotation = Quaternion.Euler(0, targetRotation.eulerAngles.y, 0);
         }
     }

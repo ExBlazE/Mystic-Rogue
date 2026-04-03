@@ -14,11 +14,13 @@ public class GameManager : MonoBehaviour
     void OnEnable()
     {
         GameEvents.OnPlayerDeath += EndGame;
+        GameEvents.OnPauseRequest += HandlePause;
     }
 
     void OnDisable()
     {
         GameEvents.OnPlayerDeath -= EndGame;
+        GameEvents.OnPauseRequest -= HandlePause;
     }
 
     void Awake()
@@ -37,26 +39,6 @@ public class GameManager : MonoBehaviour
     {
         // Set initial state of the game
         gameState = GameState.Playing;
-    }
-
-    void Update()
-    {
-        // Press Esc to pause and unpause
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            if (gameState == GameState.Playing)
-            {
-                gameState = GameState.Paused;
-                GameEvents.RaiseOnGamePause();
-                Time.timeScale = 0;
-            }
-            else if (gameState == GameState.Paused)
-            {
-                gameState = GameState.Playing;
-                GameEvents.RaiseOnGameResume();
-                Time.timeScale = 1f;
-            }
-        }
     }
 
     // Method for game over
@@ -100,11 +82,26 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 0f;
         GameEvents.RaiseOnGameOver();
     }
+
+    void HandlePause()
+    {
+        if (gameState == GameState.Playing)
+        {
+            gameState = GameState.Paused;
+            GameEvents.RaiseOnGamePause();
+            Time.timeScale = 0;
+        }
+        else if (gameState == GameState.Paused)
+        {
+            gameState = GameState.Playing;
+            GameEvents.RaiseOnGameResume();
+            Time.timeScale = 1f;
+        }
+    }
 }
 
 public enum GameState
 {
-    NotStarted,
     Playing,
     Paused,
     GameOver

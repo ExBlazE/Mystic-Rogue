@@ -5,26 +5,26 @@ public class Player : MonoBehaviour, IDamageable
     public bool IsPlayerSide => true;
     public Target TargetType => Target.Player;
 
-    [Header("Stats")]
-    public float maxHealth { get; private set; } = 100f;
-    public float maxEnergy { get; private set; } = 50f;
-
     [Header("Shield")]
     [SerializeField] Shield shield;
     [SerializeField] float shieldRegenPerSecond = 10f;
     [SerializeField] float shieldCostPerSecond = 5f;
-
     [SerializeField] float energyRegenCooldown = 3f;
     private float currentEnergyRegenCooldown;
 
+    public float maxHealth { get; private set; } = 100f;
+    public float maxEnergy { get; private set; } = 50f;
     public float health { get; private set; }
     public float energy { get; private set; }
+
+    private bool isDead;
 
     void Awake()
     {
         // Set starting health and shield to max
         health = maxHealth;
         energy = maxEnergy;
+        isDead = false;
     }
 
     void Start()
@@ -87,8 +87,11 @@ public class Player : MonoBehaviour, IDamageable
 
         GameEvents.RaiseOnHealthChanged(health);
 
-        if (health <= 0)
+        if (health <= 0 && !isDead)
+        {
+            isDead = true;
             GameEvents.RaiseOnPlayerDeath();
+        }
     }
 
     // Method to add or remove shield

@@ -17,7 +17,7 @@ public class BoundaryBehaviour : MonoBehaviour
     void Update()
     {
         // If player not in play area, reduce health
-        if (!isInPlayArea)
+        if (GameManager.Instance.gameState == GameState.Playing && !isInPlayArea)
         {
             float reduceHealth = healthPenalty * Time.deltaTime;
             player.ModifyHealth(-reduceHealth);

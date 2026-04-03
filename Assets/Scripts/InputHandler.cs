@@ -1,6 +1,5 @@
 using System;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 public class InputHandler : MonoBehaviour
@@ -9,26 +8,12 @@ public class InputHandler : MonoBehaviour
     [SerializeField] LayerMask targetLayers;
     [SerializeField] float dirSnapSpeed = 3f;
 
-    [Space]
-    [SerializeField] MoveStick moveStick;
-    [SerializeField] AimStick aimStick;
-    [SerializeField] ShieldButton shieldButton;
-
-#if UNITY_ANDROID
-    [Space]
-    [SerializeField] float moveSensitivity = 3f;
-    [SerializeField] bool alwaysMaxSpeed = false;
-#endif
-
-    public Vector2 MoveDirection {  get; private set; }
-    public Vector3 AimDirection { get; private set; }
-
-    public bool IsShooting { get; private set; }
+    private Vector2 moveDirection;
+    private Vector3 aimDirection;
+    private bool IsShooting;
 
     private Vector2 rawMoveInput;
-    private Vector2 rawAimInput;
     private Vector2 lastMoveDirection;
-    private Vector3 lastAimDirection;
     private DefaultInputActions gameInput;
 
     public event Action<Vector2> OnMove;
@@ -37,137 +22,129 @@ public class InputHandler : MonoBehaviour
     public event Action<bool> OnShield;
 
     void Awake()
-    {
-        gameInput = new DefaultInputActions();
-
-        gameInput.Player.Move.performed += context => rawMoveInput = context.ReadValue<Vector2>();
-        gameInput.Player.Move.canceled += _ => rawMoveInput = Vector2.zero;
-
-        gameInput.Player.Aim.performed += context => rawAimInput = context.ReadValue<Vector2>();
-
-        gameInput.Player.Shoot.started += _ => IsShooting = true;
-        gameInput.Player.Shoot.canceled += _ => IsShooting = false;
-
-        gameInput.Player.Shield.started += _ => OnShield?.Invoke(true);
-        gameInput.Player.Shield.canceled += _ => OnShield?.Invoke(false);
-    }
+    { gameInput = new DefaultInputActions(); }
 
     void OnEnable()
-    { gameInput.Enable(); }
+    {
+        gameInput.Enable();
+
+        gameInput.Player.Move.performed += HandleMove;
+        gameInput.Player.Move.canceled += HandleMove;
+
+        gameInput.Player.Aim.performed += HandleAim;
+        gameInput.Player.Aim.canceled += HandleAim;
+
+        gameInput.Player.Shoot.started += HandleShoot;
+        gameInput.Player.Shoot.canceled += HandleShoot;
+
+        gameInput.Player.Shield.started += HandleShield;
+        gameInput.Player.Shield.canceled += HandleShield;
+
+        gameInput.UI.Pause.performed += HandlePauseRequest;
+    }
 
     void OnDisable()
-    { gameInput.Disable(); }
+    {
+        gameInput.Player.Move.performed -= HandleMove;
+        gameInput.Player.Move.canceled -= HandleMove;
+
+        gameInput.Player.Aim.performed -= HandleAim;
+        gameInput.Player.Aim.canceled -= HandleAim;
+
+        gameInput.Player.Shoot.started -= HandleShoot;
+        gameInput.Player.Shoot.canceled -= HandleShoot;
+
+        gameInput.Player.Shield.started -= HandleShield;
+        gameInput.Player.Shield.canceled -= HandleShield;
+
+        gameInput.UI.Pause.performed -= HandlePauseRequest;
+
+        gameInput.Disable();
+    }
 
     // Update is called once per frame
     void Update()
     {
-#if UNITY_STANDALONE || UNITY_WEBGL
         SetMove();
-        SetAim();
         if (IsShooting)
             OnShoot?.Invoke();
-#elif UNITY_ANDROID
-        SetSmoothMove();
-        if (aimStick.IsBeingUsed)
-        {
-            SetJoystickAim();
-            IsShooting = aimStick.IsShooting;
-        }
-        else
-            SetTapAim();
-
-        IsShieldStarted = shieldButton.IsShieldStarted;
-        IsShieldReleased = shieldButton.IsShieldReleased;
-#endif
     }
 
-#if UNITY_STANDALONE || UNITY_WEBGL
+    void HandleMove(InputAction.CallbackContext context)
+    {
+        if (context.performed)
+            rawMoveInput = context.ReadValue<Vector2>();
+        else if (context.canceled)
+            rawMoveInput = Vector2.zero;
+    }
+
     void SetMove()
     {
+        // Smooth movement logic
         float currentDirSnapSpeed = rawMoveInput.sqrMagnitude > 0 ? dirSnapSpeed * 2 : dirSnapSpeed;
-        MoveDirection = Vector2.MoveTowards(MoveDirection, rawMoveInput, currentDirSnapSpeed * Time.deltaTime);
+        moveDirection = Vector2.MoveTowards(moveDirection, rawMoveInput, currentDirSnapSpeed * Time.deltaTime);
 
-        if (lastMoveDirection == Vector2.zero && MoveDirection == Vector2.zero)
+        if (lastMoveDirection == Vector2.zero && moveDirection == Vector2.zero)
             return;
 
-        OnMove?.Invoke(MoveDirection);
-        lastMoveDirection = MoveDirection;
+        OnMove?.Invoke(moveDirection);
+        lastMoveDirection = moveDirection;
     }
 
-    void SetAim()
+    void HandleAim(InputAction.CallbackContext context)
     {
-        // Draw a ray from camera through the mouse pointer
-        Vector3 mousePosOnGame = Camera.main.ScreenToViewportPoint(rawAimInput);
-        Ray ray = Camera.main.ViewportPointToRay(mousePosOnGame);
-        RaycastHit hit;
-
-        // Cast the ray until it hits an object in the selected layers
-        if (Physics.Raycast(ray, out hit, Mathf.Infinity, targetLayers))
-        {
-            // Get mouse position on ground level and direction from player
-            Vector3 mousePosition = hit.point;
-            AimDirection = mousePosition - orbFocus.transform.position;
-
-            if (lastAimDirection == AimDirection)
-                return;
-
-            OnAim?.Invoke(AimDirection);
-            lastAimDirection = AimDirection;
-        }
-    }
-#elif UNITY_ANDROID
-    void SetSmoothMove()
-    {
-        float maxMovePerFrame = Time.deltaTime * moveSensitivity;
-        Vector2 newDirection;
-        if (alwaysMaxSpeed)
-            newDirection = moveStick.Direction.normalized;
-        else
-            newDirection = moveStick.Direction;
-        float newX = Mathf.MoveTowards(MoveDirection.x, newDirection.x, maxMovePerFrame);
-        float newY = Mathf.MoveTowards(MoveDirection.y, newDirection.y, maxMovePerFrame);
-        MoveDirection = new Vector2 (newX, newY);
-    }
-
-    void SetJoystickAim()
-    {
-        float xDirection = aimStick.Direction.x;
-        float yDirection = aimStick.Direction.y;
-        AimDirection = new Vector3 (xDirection, 0, yDirection);
-    }
-
-    void SetTapAim()
-    {
-        if (Input.touchCount > 0)
-        {
-            Touch touch;
-            for (int i = 0; i < Input.touchCount; i++)
-            {
-                touch = Input.GetTouch(i);
-                if (!EventSystem.current.IsPointerOverGameObject(touch.fingerId) && touch.fingerId != moveStick.pointerId)
-                {
-                    if (touch.phase != TouchPhase.Ended)
-                    {
-                        Ray ray = Camera.main.ScreenPointToRay(touch.position);
-                        RaycastHit hit;
-
-                        // Cast the ray until it hits an object in the selected layers
-                        if (Physics.Raycast(ray, out hit, Mathf.Infinity, targetLayers))
-                        {
-                            Vector3 touchPosition = hit.point;
-                            AimDirection = touchPosition - orbFocus.transform.position;
-                            IsShooting = true;
-                        }
-                    }
-                    else
-                        IsShooting = false;
-
-                    return;
-                }
-            }
-        }
-        else
+        Vector2 rawAimInput = context.ReadValue<Vector2>();
+        SetAim(rawAimInput, context.control.device);
+        if (context.control.device is Gamepad && context.canceled)
             IsShooting = false;
     }
-#endif
+
+    void SetAim(Vector2 rawAimInput, InputDevice device)
+    {
+        if (device is Mouse)
+        {
+            // Draw a ray from camera through the mouse pointer
+            Ray ray = Camera.main.ScreenPointToRay(rawAimInput);
+            RaycastHit hit;
+
+            // Cast the ray until it hits an object in the selected layers
+            if (Physics.Raycast(ray, out hit, Mathf.Infinity, targetLayers))
+            {
+                // Get mouse position on ground level and direction from player
+                Vector3 mousePosition = hit.point;
+                aimDirection = mousePosition - orbFocus.transform.position;
+            }
+        }
+        
+        else if (device is Gamepad)
+        {
+            IsShooting = rawAimInput.sqrMagnitude > 0.9f ? true : false;
+            aimDirection = new Vector3(rawAimInput.x, 0, rawAimInput.y);
+        }
+        
+        if (aimDirection != Vector3.zero)
+        {
+            aimDirection.Normalize();
+            OnAim?.Invoke(aimDirection);
+        }
+    }
+
+    void HandleShoot(InputAction.CallbackContext context)
+    {
+        if (context.started)
+            IsShooting = true;
+        else if (context.canceled)
+            IsShooting = false;
+    }
+
+    void HandleShield(InputAction.CallbackContext context)
+    {
+        if (context.started)
+            OnShield?.Invoke(true);
+        else if (context.canceled)
+            OnShield?.Invoke(false);
+    }
+
+    void HandlePauseRequest(InputAction.CallbackContext _)
+    { GameEvents.RaiseOnPauseRequest(); }
 }

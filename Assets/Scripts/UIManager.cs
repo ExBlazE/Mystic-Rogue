@@ -16,6 +16,9 @@ public class UIManager : MonoBehaviour
     [SerializeField] GameObject mobileControls;
     [SerializeField] GameObject aimingArrow;
 
+    [Space]
+    [SerializeField] bool autoUISwitch;
+
     void OnEnable()
     {
         GameEvents.OnGamePause += ShowPauseMenu;
@@ -35,6 +38,8 @@ public class UIManager : MonoBehaviour
         pauseMenu.SetActive(false);
         gameOverScreen.SetActive(false);
         newHighScoreText.SetActive(false);
+
+        if (!autoUISwitch) return;
 
 #if UNITY_STANDALONE || UNITY_WEBGL
         keyboardTutorial.SetActive(true);

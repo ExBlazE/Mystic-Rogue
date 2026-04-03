@@ -9,6 +9,7 @@ public static class GameEvents
 
     public static event Action<float> OnHealthChanged;
     public static event Action<float> OnEnergyChanged;
+    public static event Action<int> OnScoreChanged;
 
     public static event Action OnPlayerDeath;
     public static event Action<int> OnEnemyDeath;
@@ -18,7 +19,7 @@ public static class GameEvents
     public static event Action OnGameResume;
     public static event Action OnGameOver;
 
-    public static event Action<int> OnScoreChanged;
+    public static event Action OnPauseRequest;
 
     // --- EVENT RAISE PUBLIC METHODS ---
     public static void RaiseOnShotFired() {  OnShotFired?.Invoke(); }
@@ -28,6 +29,7 @@ public static class GameEvents
 
     public static void RaiseOnHealthChanged(float newHealth) {  OnHealthChanged?.Invoke(newHealth); }
     public static void RaiseOnEnergyChanged(float newEnergy) {  OnEnergyChanged?.Invoke(newEnergy); }
+    public static void RaiseOnScoreChanged(int newScore) { OnScoreChanged?.Invoke(newScore); }
 
     public static void RaiseOnPlayerDeath() { OnPlayerDeath?.Invoke(); }
     public static void RaiseOnEnemyDeath(int addScore) { OnEnemyDeath?.Invoke(addScore); }
@@ -37,5 +39,5 @@ public static class GameEvents
     public static void RaiseOnGameResume() { OnGameResume?.Invoke(); }
     public static void RaiseOnGameOver() { OnGameOver?.Invoke(); }
 
-    public static void RaiseOnScoreChanged(int newScore) { OnScoreChanged?.Invoke(newScore); }
+    public static void RaiseOnPauseRequest() { OnPauseRequest?.Invoke(); }
 }
