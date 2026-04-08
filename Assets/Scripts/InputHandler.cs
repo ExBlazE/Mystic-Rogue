@@ -1,7 +1,10 @@
-using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+/// <summary>
+/// Translates all signals from the Input System to events for other systems to listen to.<br/>
+/// <i>MANDATORY for every scene with controllable player.</i>
+/// </summary>
 public class InputHandler : MonoBehaviour
 {
     [SerializeField] GameObject orbFocus;
@@ -15,12 +18,7 @@ public class InputHandler : MonoBehaviour
     private Vector2 rawMoveInput;
     private Vector2 lastMoveDirection;
     private DefaultInputActions gameInput;
-
-    public event Action<Vector2> OnMove;
-    public event Action<Vector3> OnAim;
-    public event Action OnShoot;
-    public event Action<bool> OnShield;
-
+    
     void Awake()
     { gameInput = new DefaultInputActions(); }
 
@@ -62,14 +60,14 @@ public class InputHandler : MonoBehaviour
         gameInput.Disable();
     }
 
-    // Update is called once per frame
     void Update()
     {
         SetMove();
         if (IsShooting)
-            OnShoot?.Invoke();
+            InputEvents.RaiseOnShoot();
     }
 
+    // Saves the directional input data to a variable
     void HandleMove(InputAction.CallbackContext context)
     {
         if (context.performed)
@@ -78,19 +76,23 @@ public class InputHandler : MonoBehaviour
             rawMoveInput = Vector2.zero;
     }
 
+    // Smooths the snap movement data provided by the input into a gradual speed-up, slow-down movement
+    // Because it's a process that happens even when there isn't immediate input, this needs to be in Update()
     void SetMove()
     {
         // Smooth movement logic
         float currentDirSnapSpeed = rawMoveInput.sqrMagnitude > 0 ? dirSnapSpeed * 2 : dirSnapSpeed;
         moveDirection = Vector2.MoveTowards(moveDirection, rawMoveInput, currentDirSnapSpeed * Time.deltaTime);
 
+        // Guard against movement event being fired even when no input is detected and all smoothing is finished
         if (lastMoveDirection == Vector2.zero && moveDirection == Vector2.zero)
             return;
 
-        OnMove?.Invoke(moveDirection);
+        InputEvents.RaiseOnMove(moveDirection);
         lastMoveDirection = moveDirection;
     }
 
+    // Extract the Vector2 data and the control device and call SetAim
     void HandleAim(InputAction.CallbackContext context)
     {
         Vector2 rawAimInput = context.ReadValue<Vector2>();
@@ -99,6 +101,8 @@ public class InputHandler : MonoBehaviour
             IsShooting = false;
     }
 
+    // Distinguishes between input device and sets aim direction accordingly
+    // Player object reference required for mouse input aim direction calculations
     void SetAim(Vector2 rawAimInput, InputDevice device)
     {
         if (device is Mouse)
@@ -125,7 +129,7 @@ public class InputHandler : MonoBehaviour
         if (aimDirection != Vector3.zero)
         {
             aimDirection.Normalize();
-            OnAim?.Invoke(aimDirection);
+            InputEvents.RaiseOnAim(aimDirection);
         }
     }
 
@@ -140,11 +144,11 @@ public class InputHandler : MonoBehaviour
     void HandleShield(InputAction.CallbackContext context)
     {
         if (context.started)
-            OnShield?.Invoke(true);
+            InputEvents.RaiseOnShield(true);
         else if (context.canceled)
-            OnShield?.Invoke(false);
+            InputEvents.RaiseOnShield(false);
     }
 
     void HandlePauseRequest(InputAction.CallbackContext _)
-    { GameEvents.RaiseOnPauseRequest(); }
+    { InputEvents.RaiseOnPauseRequest(); }
 }

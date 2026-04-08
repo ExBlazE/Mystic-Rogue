@@ -1,15 +1,19 @@
 using System.Collections;
 using UnityEngine;
 
+/// <summary>
+/// Manages the state of the shield.<br/>
+/// <i>MANDATORY for every scene with controllable player.</i>
+/// </summary>
 public class Shield : MonoBehaviour, IDamageable
 {
     public bool IsPlayerSide => true;
     public Target TargetType => Target.Shield;
 
-    [SerializeField] Player player;
     [SerializeField] float fadeDuration = 0.15f;
+    [SerializeField] Player player;
 
-    public bool isShieldActive { get; private set; }
+    public bool IsShieldActive { get; private set; }
 
     private bool fading = false;
     private bool fadeOutQueued = false;
@@ -28,7 +32,7 @@ public class Shield : MonoBehaviour, IDamageable
     void Start()
     {
         // Disable shield by default at start
-        isShieldActive = false;
+        IsShieldActive = false;
         shieldCollider.enabled = false;
         shieldRenderer.material.SetFloat(shieldAlphaName, 0f);
         shieldRenderer.enabled = false;
@@ -43,7 +47,7 @@ public class Shield : MonoBehaviour, IDamageable
     {
         if (shieldState)
         {
-            if (player.energy > 0)
+            if (player.Energy > 0)
             {
                 StartCoroutine(ToggleShield(shieldState));
                 GameEvents.RaiseOnShieldAppear();
@@ -87,8 +91,8 @@ public class Shield : MonoBehaviour, IDamageable
             startAlpha = 0f;
             endAlpha = 1f;
 
-            // Activate the shield game object
-            isShieldActive = true;
+            // Activate the shield functionality
+            IsShieldActive = true;
             shieldCollider.enabled = true;
             shieldRenderer.enabled = true;
         }
@@ -123,10 +127,10 @@ public class Shield : MonoBehaviour, IDamageable
             yield return null;
         }
 
-        // If fading out, deactivate shield object and reset queue flag
+        // If fading out, deactivate shield functionality and reset queue flag
         if (!newState)
         {
-            isShieldActive = false;
+            IsShieldActive = false;
             shieldCollider.enabled = false;
             shieldRenderer.enabled = false;
 

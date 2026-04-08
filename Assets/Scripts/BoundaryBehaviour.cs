@@ -1,10 +1,16 @@
 using UnityEngine;
 
+/// <summary>
+/// Sets the bounds of the attached collider as play area.
+/// If player goes out of play area, they take damage.
+/// </summary>
 public class BoundaryBehaviour : MonoBehaviour
 {
+    [SerializeField] float healthPenalty = 5f;
+
+    [Space]
     [SerializeField] Player player;
     [SerializeField] ParticleSystem bleedFX;
-    [SerializeField] float healthPenalty = 5f;
     
     private bool isInPlayArea;
 
@@ -17,7 +23,7 @@ public class BoundaryBehaviour : MonoBehaviour
     void Update()
     {
         // If player not in play area, reduce health
-        if (GameManager.Instance.gameState == GameState.Playing && !isInPlayArea)
+        if (!isInPlayArea)
         {
             float reduceHealth = healthPenalty * Time.deltaTime;
             player.ModifyHealth(-reduceHealth);
@@ -44,6 +50,7 @@ public class BoundaryBehaviour : MonoBehaviour
         }
     }
 
+    // Toggles bleeding FX on the player
     void PlayBleedFX(bool control)
     {
         var bleedEmission = bleedFX.emission;

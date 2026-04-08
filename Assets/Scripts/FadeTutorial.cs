@@ -3,6 +3,10 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
+/// <summary>
+/// Attach to a parent game object which has texts or images as children.
+/// Fades in and out the texts and images over time, and automatically sets itself inactive at the end.
+/// </summary>
 public class FadeTutorial : MonoBehaviour
 {
     [SerializeField] float introDuration = 1f;

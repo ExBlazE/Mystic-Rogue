@@ -1,6 +1,9 @@
 using System.Collections;
 using UnityEngine;
 
+/// <summary>
+/// Manages all audio in the scene.
+/// </summary>
 public class AudioManager : MonoBehaviour
 {
     [Header("BGM")]
@@ -45,15 +48,15 @@ public class AudioManager : MonoBehaviour
     {
         if (DataManager.Instance != null)
         {
-            Globals.musicVolume = 0.5f;
-            Globals.effectsVolume = 0.5f;
+            Globals.MusicVolume = 0.5f;
+            Globals.EffectsVolume = 0.5f;
         }
     }
 
     public void StartBGM()
     {
         backgroundMusic.Play();
-        backgroundMusic.volume = Globals.musicVolume;
+        backgroundMusic.volume = Globals.MusicVolume;
     }
 
     public void PauseBGM()
@@ -69,7 +72,7 @@ public class AudioManager : MonoBehaviour
     public void PlayShotStart()
     {
         shotStart.PlayOneShot(shotStartClip);
-        shotStart.volume = Globals.effectsVolume;
+        shotStart.volume = Globals.EffectsVolume;
     }
 
     // Invoked when a projectile hits something
@@ -77,26 +80,28 @@ public class AudioManager : MonoBehaviour
     public void PlayShotHit(Vector3 _, Quaternion __, Target ___)
     {
         shotHit.PlayOneShot(shotHitClip);
-        shotHit.volume = Globals.effectsVolume;
+        shotHit.volume = Globals.EffectsVolume;
     }
 
     // Invoked when activating shield
     public void PlayShield()
     {
         shield.PlayOneShot(shieldClip);
-        shield.volume = Globals.effectsVolume;
+        shield.volume = Globals.EffectsVolume;
     }
 
-    // Method for use by music volume slider. Assign in inspector with Dynamic Float.
+    // Method for use by music volume slider.
+    // Assign in inspector with Dynamic Float.
     public void SetMusicVolume(float volume)
     { 
-        Globals.musicVolume = volume;
+        Globals.MusicVolume = volume;
         backgroundMusic.volume = volume;
     }
 
-    // Method for use by effects volume slider. Assign in inspector with Dynamic Float.
+    // Method for use by effects volume slider.
+    // Assign in inspector with Dynamic Float.
     public void SetEffectsVolume(float volume)
-    { Globals.effectsVolume = volume; }
+    { Globals.EffectsVolume = volume; }
 
     // Fade out the BGM over given duration. To be called on game over.
     IEnumerator FadeBGM()

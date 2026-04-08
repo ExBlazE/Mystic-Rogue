@@ -1,39 +1,49 @@
 using UnityEngine;
 
+/// <summary>
+/// Manages projectile life-cycle and collision behaviour.
+/// </summary>
 public class Projectile : MonoBehaviour
 {
     [SerializeField] bool isPlayerSide;
 
     [Space]
+    [SerializeField] float damage = 10;
     [SerializeField] float speed = 15f;
     [SerializeField] float maxDuration = 3f;
+
     private float aliveDuration;
-
-    [Space]
-    [SerializeField] float damage = 10;
-
     private bool hasCollided = false;
+    private Rigidbody rb;
 
+    void Awake()
+    {
+        rb = GetComponent<Rigidbody>();
+    }
+
+    // Initialization logic in OnEnable because this object will be in object pool
+    // And thus needs to initialize multiple times in a single game object life-cycle
     void OnEnable()
     {
         aliveDuration = maxDuration;
         hasCollided = false;
+        rb.linearVelocity = transform.forward * speed;
+    }
+
+    // Safety reset just in case
+    void OnDisable()
+    {
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
     }
 
     void Update()
     {
-        // Move projectile forward at constant speed
-        transform.Translate(Vector3.forward * speed * Time.deltaTime);
-
-        // Destroy projectile after set duration
+        // Disable projectile after set duration
         if (aliveDuration > 0)
-        {
             aliveDuration -= Time.deltaTime;
-        }
         else
-        {
             gameObject.SetActive(false);
-        }
     }
 
     void OnTriggerEnter(Collider other)

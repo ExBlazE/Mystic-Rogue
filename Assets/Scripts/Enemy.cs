@@ -1,26 +1,31 @@
 using UnityEngine;
 
+/// <summary>
+/// Basic class for enemy AI.
+/// </summary>
 public class Enemy : MonoBehaviour, IDamageable
 {
     public bool IsPlayerSide => false;
     public Target TargetType => Target.Enemy;
 
-    [SerializeField] GameObject focus;
     public bool canMove = true;
-    [SerializeField] float moveSpeed = 2.5f;
+    public bool canShoot = true;
 
     [Space]
-    [SerializeField] ObjectPooler projectilePool;
-    public bool canShoot = true;
+    [SerializeField] float moveSpeed = 2.5f;
     [SerializeField] float shotRange = 15f;
     [SerializeField] float shotCooldown = 2.5f;
     [SerializeField] float collisionDamage = 20f;
 
-    private float shotRangeSqr;
-    private float currentCooldown = 0f;
+    [Space]
+    [SerializeField] ObjectPooler projectilePool;
 
     [Space]
+    [SerializeField] GameObject focus;
     [SerializeField] Animator enemyAnim;
+
+    private float shotRangeSqr;
+    private float currentCooldown = 0f;
 
     private Player playerRef;
     private Rigidbody enemyRb;
@@ -33,8 +38,9 @@ public class Enemy : MonoBehaviour, IDamageable
 
     void Start()
     {
-        // Square the shot range distance
+        // Square the shot range distance and reset cooldown
         shotRangeSqr = shotRange * shotRange;
+        currentCooldown = 0f;
     }
 
     void Update()
@@ -96,11 +102,8 @@ public class Enemy : MonoBehaviour, IDamageable
         Vector3 spawnPos = focus.transform.position;
         Quaternion spawnRot = transform.rotation;
 
-        // Spawn projectile and start cooldown
-        GameObject projectile = projectilePool.GetFromPool();
-        projectile.transform.position = spawnPos;
-        projectile.transform.rotation = spawnRot;
-
+        // Spawn projectile, launch it and start cooldown
+        projectilePool.GetFromPool(spawnPos, spawnRot);
         currentCooldown = shotCooldown;
     }
 
@@ -109,13 +112,11 @@ public class Enemy : MonoBehaviour, IDamageable
     {
         bool isDamageable = collision.gameObject.TryGetComponent<IDamageable>(out var target);
 
-        if (!isDamageable)
-            return;
+        if (!isDamageable) return;
 
         bool isPlayerSide = target.IsPlayerSide;
-        bool isPlayer = collision.gameObject.CompareTag("Player");
+        bool isPlayer = (target.TargetType == Target.Player);
 
-        // If touching player, deplete health
         if (isDamageable && isPlayerSide && isPlayer)
         {
             target.OnHit(collisionDamage);
@@ -134,9 +135,8 @@ public class Enemy : MonoBehaviour, IDamageable
             return;
 
         bool isPlayerSide = target.IsPlayerSide;
-        bool isShield = other.CompareTag("Shield");
+        bool isShield = (target.TargetType == Target.Shield);
 
-        // If touching shield, deplete shield
         if (isDamageable && isPlayerSide && isShield)
         {
             target.OnHit(collisionDamage);
@@ -152,6 +152,7 @@ public class Enemy : MonoBehaviour, IDamageable
         GameEvents.RaiseOnEnemyDeath(1);
     }
 
+    // For dependency injection by SpawnManager
     public void Initialize(Player playerRef, ObjectPooler projectilePool)
     {
         this.playerRef = playerRef;

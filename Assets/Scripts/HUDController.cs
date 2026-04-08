@@ -2,6 +2,9 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// Manages the in-game heads-up display (HUD).
+/// </summary>
 public class HUDController : MonoBehaviour
 {
     [SerializeField] Slider healthSlider;
@@ -32,22 +35,24 @@ public class HUDController : MonoBehaviour
     {
         Player player = FindFirstObjectByType<Player>();
 
-        // Set health UI
+        // Set initial health UI
         healthSlider.minValue = 0f;
-        healthSlider.maxValue = player.maxHealth;
-        healthSlider.value = player.health;
+        healthSlider.maxValue = player.MaxHealth;
+        healthSlider.value = player.Health;
 
-        // Set shield UI
+        // Set initial shield UI
         energySlider.minValue = 0f;
-        energySlider.maxValue = player.maxEnergy;
-        energySlider.value = player.energy;
+        energySlider.maxValue = player.MaxEnergy;
+        energySlider.value = player.Energy;
 
         lastTimeInSeconds = 0;
     }
 
+    // Update timer every second
+    // Additional check on if seconds actually changed to prevent UI redraw on every frame
     void Update()
     {
-        int currentTimeInSeconds = (int)sessionStats.timeAlive;
+        int currentTimeInSeconds = (int)sessionStats.TimeAlive;
         if (currentTimeInSeconds != lastTimeInSeconds)
         {
             SetTimerDisplay(currentTimeInSeconds);

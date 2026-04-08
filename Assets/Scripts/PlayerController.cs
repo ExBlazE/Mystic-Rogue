@@ -1,5 +1,9 @@
 using UnityEngine;
 
+/// <summary>
+/// Script for controlling the player.<br/>
+/// <i>MANDATORY for every scene with controllable player.</i>
+/// </summary>
 public class PlayerController : MonoBehaviour
 {
     [Header("Aiming")]
@@ -7,37 +11,37 @@ public class PlayerController : MonoBehaviour
     [SerializeField] GameObject orbObject;
 
     [Header("Movement")]
-    [SerializeField] Animator playerAnim;
     [SerializeField] float moveSpeed = 5f;
-    private Vector2 currentMoveDirection = Vector2.zero;
+    [SerializeField] Animator playerAnim;
 
     [Header("Shooting")]
-    [SerializeField] ObjectPooler projectilePool;
     [SerializeField] float shotCooldown = 0.3f;
-    private float currentShotCooldown = 0f;
+    [SerializeField] ObjectPooler projectilePool;
 
     [Header("Shield")]
     [SerializeField] Shield shield;
 
-    private InputHandler input;
+    private float currentShotCooldown = 0f;
+    private Vector2 currentMoveDirection = Vector2.zero;
+
     private Rigidbody playerRb;
 
     void OnEnable()
     {
-        input.OnMove += HandleMove;
-        input.OnAim += MoveOrb;
-        input.OnShoot += ShootProjectile;
-        input.OnShield += HandleShield;
+        InputEvents.OnMove += HandleMove;
+        InputEvents.OnAim += RotatePlayer;
+        InputEvents.OnShoot += ShootProjectile;
+        InputEvents.OnShield += HandleShield;
 
         GameEvents.OnGameResume += ForceDisableShield;
     }
 
     void OnDisable()
     {
-        input.OnMove -= HandleMove;
-        input.OnAim -= MoveOrb;
-        input.OnShoot -= ShootProjectile;
-        input.OnShield -= HandleShield;
+        InputEvents.OnMove -= HandleMove;
+        InputEvents.OnAim -= RotatePlayer;
+        InputEvents.OnShoot -= ShootProjectile;
+        InputEvents.OnShield -= HandleShield;
 
         GameEvents.OnGameResume -= ForceDisableShield;
     }
@@ -45,7 +49,6 @@ public class PlayerController : MonoBehaviour
     void Awake()
     {
         // Get reference to other components
-        input = GetComponent<InputHandler>();
         playerRb = GetComponent<Rigidbody>();
     }
 
@@ -57,6 +60,7 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        // Guard clause to ignore following code if game is paused or over
         if (GameManager.Instance.gameState != GameState.Playing) return;
 
         // Set animator parameters
@@ -74,14 +78,15 @@ public class PlayerController : MonoBehaviour
     // Move logic in FixedUpdate for smooth rigidbody physics
     void FixedUpdate()
     {
-        Move();
+        MovePlayer();
     }
 
+    // Receive latest movement input data via event
     void HandleMove(Vector2 moveDirection)
     { currentMoveDirection = moveDirection; }
 
-    // Method to move player
-    void Move()
+    // Moves player according to latest movement data
+    void MovePlayer()
     {
         if (GameManager.Instance.gameState != GameState.Playing) return;
 
@@ -94,8 +99,8 @@ public class PlayerController : MonoBehaviour
         playerRb.linearVelocity = movement * moveSpeed;
     }
 
-    // Method to spin orb around player
-    void MoveOrb(Vector3 aimDirection)
+    // Method to rotate player
+    void RotatePlayer(Vector3 aimDirection)
     {
         if (GameManager.Instance.gameState != GameState.Playing) return;
 
@@ -129,10 +134,8 @@ public class PlayerController : MonoBehaviour
         Vector3 spawnPos = orbObject.transform.position;
         Quaternion spawnRot = orbFocus.transform.rotation;
 
-        // Spawn the projectile and start cooldown
-        GameObject projectile = projectilePool.GetFromPool();
-        projectile.transform.position = spawnPos;
-        projectile.transform.rotation = spawnRot;
+        // Spawn the projectile, launch it and start cooldown
+        projectilePool.GetFromPool(spawnPos, spawnRot);
         currentShotCooldown = shotCooldown;
 
         // Fire an event to indicate projectile fired
@@ -145,12 +148,12 @@ public class PlayerController : MonoBehaviour
 
         if (shieldEnable)
         {
-            if (!shield.isShieldActive)
+            if (!shield.IsShieldActive)
                 shield.Toggle(true);
         }
         else
         {
-            if (shield.isShieldActive)
+            if (shield.IsShieldActive)
                 shield.Toggle(false);
         }
     }

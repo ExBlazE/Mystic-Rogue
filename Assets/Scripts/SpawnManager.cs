@@ -1,14 +1,12 @@
 using System.Collections;
 using UnityEngine;
 
+/// <summary>
+/// Manages enemy spawns in the game.<br/>
+/// An enemy is spawned with a delay between each spawn, which becomes shorter over time.
+/// </summary>
 public class SpawnManager : MonoBehaviour
 {
-    [SerializeField] ObjectPooler enemyPool;
-    [SerializeField] ObjectPooler enemyProjectilePool;
-    [SerializeField] Player playerRef;
-    [SerializeField] SessionStats sessionStats;
-
-    [Space]
     [SerializeField] float preSpawnDelay = 5.0f;
     [SerializeField] float spawnDelayStart = 3.0f;
     [SerializeField] float spawnDelayReduce = 0.5f;
@@ -20,6 +18,12 @@ public class SpawnManager : MonoBehaviour
 
     [Space]
     [SerializeField] float spawnDistance = 25f;
+
+    [Space]
+    [SerializeField] ObjectPooler enemyPool;
+    [SerializeField] ObjectPooler enemyProjectilePool;
+    [SerializeField] Player playerRef;
+    [SerializeField] SessionStats sessionStats;
 
     private int enemiesOnScreen = 0;
 
@@ -62,7 +66,7 @@ public class SpawnManager : MonoBehaviour
             SpawnEnemy();
 
             // Get the current difficulty stage
-            int newStage = (int)((sessionStats.timeAlive - preSpawnDelay) / stageLength);
+            int newStage = (int)((sessionStats.TimeAlive - preSpawnDelay) / stageLength);
 
             // If stage advances, set new stage and reduce delay between enemy spawns
             if (currentStage < newStage)

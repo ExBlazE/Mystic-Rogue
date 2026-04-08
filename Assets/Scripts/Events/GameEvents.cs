@@ -1,6 +1,9 @@
 using System;
 using UnityEngine;
 
+/// <summary>
+/// Contains all game-specific events and their public raise methods.
+/// </summary>
 public static class GameEvents
 {
     public static event Action OnShotFired;
@@ -18,8 +21,7 @@ public static class GameEvents
     public static event Action OnGamePause;
     public static event Action OnGameResume;
     public static event Action OnGameOver;
-
-    public static event Action OnPauseRequest;
+    public static event Action OnHighScore;
 
     // --- EVENT RAISE PUBLIC METHODS ---
     public static void RaiseOnShotFired() {  OnShotFired?.Invoke(); }
@@ -38,6 +40,5 @@ public static class GameEvents
     public static void RaiseOnGamePause() { OnGamePause?.Invoke(); }
     public static void RaiseOnGameResume() { OnGameResume?.Invoke(); }
     public static void RaiseOnGameOver() { OnGameOver?.Invoke(); }
-
-    public static void RaiseOnPauseRequest() { OnPauseRequest?.Invoke(); }
+    public static void RaiseOnHighScore() { OnHighScore?.Invoke(); }
 }

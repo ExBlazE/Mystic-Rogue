@@ -1,29 +1,34 @@
 using UnityEngine;
 
+/// <summary>
+/// Manages player stats and their modification methods.<br/>
+/// <i>MANDATORY for every scene with controllable player.</i>
+/// </summary>
 public class Player : MonoBehaviour, IDamageable
 {
     public bool IsPlayerSide => true;
     public Target TargetType => Target.Player;
 
+    public float MaxHealth = 100f;
+    public float MaxEnergy = 50f;
+
     [Header("Shield")]
-    [SerializeField] Shield shield;
     [SerializeField] float shieldRegenPerSecond = 10f;
     [SerializeField] float shieldCostPerSecond = 5f;
     [SerializeField] float energyRegenCooldown = 3f;
+    [SerializeField] Shield shield;
+
+    public float Health { get; private set; }
+    public float Energy { get; private set; }
+
     private float currentEnergyRegenCooldown;
-
-    public float maxHealth { get; private set; } = 100f;
-    public float maxEnergy { get; private set; } = 50f;
-    public float health { get; private set; }
-    public float energy { get; private set; }
-
     private bool isDead;
 
     void Awake()
     {
         // Set starting health and shield to max
-        health = maxHealth;
-        energy = maxEnergy;
+        Health = MaxHealth;
+        Energy = MaxEnergy;
         isDead = false;
     }
 
@@ -35,37 +40,34 @@ public class Player : MonoBehaviour, IDamageable
 
     void Update()
     {
-        // Energy and shield logic to run only when game is active and unpaused
-        if (GameManager.Instance.gameState == GameState.Playing)
+        // Energy and shield logic below to run only when game is active and unpaused
+        if (GameManager.Instance.gameState != GameState.Playing) return;
+
+        // Disable shield when zero
+        if (Energy == 0 && shield.IsShieldActive)
+        { shield.Toggle(false); }
+
+        // Reset energy cooldown and reduce energy when shield is active
+        if (shield.IsShieldActive)
         {
-            // Disable shield when zero
-            if (energy == 0 && shield.isShieldActive)
-            {
-                shield.Toggle(false);
-            }
+            currentEnergyRegenCooldown = energyRegenCooldown;
+            float energyReduce = shieldCostPerSecond * Time.deltaTime;
+            ModifyEnergy(-energyReduce);
+        }
 
-            // Reset energy cooldown and reduce energy when shield is active
-            if (shield.isShieldActive)
-            {
-                currentEnergyRegenCooldown = energyRegenCooldown;
-                float energyReduce = shieldCostPerSecond * Time.deltaTime;
-                ModifyEnergy(-energyReduce);
-            }
+        // Reduce shield regen cooldown to zero
+        if (currentEnergyRegenCooldown > 0 && !shield.IsShieldActive)
+        {
+            currentEnergyRegenCooldown -= Time.deltaTime;
+            if (currentEnergyRegenCooldown < 0)
+                currentEnergyRegenCooldown = 0;
+        }
 
-            // Reduce shield regen cooldown to zero
-            if (currentEnergyRegenCooldown > 0 && !shield.isShieldActive)
-            {
-                currentEnergyRegenCooldown -= Time.deltaTime;
-                if (currentEnergyRegenCooldown < 0)
-                    currentEnergyRegenCooldown = 0;
-            }
-
-            // Regen shield
-            if (energy < maxEnergy && currentEnergyRegenCooldown == 0 && !shield.isShieldActive)
-            {
-                float shieldRegen = shieldRegenPerSecond * Time.deltaTime;
-                ModifyEnergy(shieldRegen);
-            }
+        // Regen shield
+        if (Energy < MaxEnergy && currentEnergyRegenCooldown == 0 && !shield.IsShieldActive)
+        {
+            float shieldRegen = shieldRegenPerSecond * Time.deltaTime;
+            ModifyEnergy(shieldRegen);
         }
     }
 
@@ -77,17 +79,18 @@ public class Player : MonoBehaviour, IDamageable
     // Method to add or remove health
     public void ModifyHealth(float changeHealth)
     {
-        health += changeHealth;
+        Health += changeHealth;
 
         // Restrict value between zero and max
-        if (health < 0)
-            health = 0;
-        else if (health > maxHealth)
-            health = maxHealth;
+        if (Health < 0)
+            Health = 0;
+        else if (Health > MaxHealth)
+            Health = MaxHealth;
 
-        GameEvents.RaiseOnHealthChanged(health);
+        GameEvents.RaiseOnHealthChanged(Health);
 
-        if (health <= 0 && !isDead)
+        // If health becomes zero, set player to dead
+        if (Health <= 0 && !isDead)
         {
             isDead = true;
             GameEvents.RaiseOnPlayerDeath();
@@ -97,14 +100,14 @@ public class Player : MonoBehaviour, IDamageable
     // Method to add or remove shield
     public void ModifyEnergy(float changeEnergy)
     {
-        energy += changeEnergy;
+        Energy += changeEnergy;
 
         // Restrict value between zero and max
-        if (energy < 0)
-            energy = 0;
-        else if (energy > maxEnergy)
-            energy = maxEnergy;
+        if (Energy < 0)
+            Energy = 0;
+        else if (Energy > MaxEnergy)
+            Energy = MaxEnergy;
 
-        GameEvents.RaiseOnEnergyChanged(energy);
+        GameEvents.RaiseOnEnergyChanged(Energy);
     }
 }

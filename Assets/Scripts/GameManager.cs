@@ -2,25 +2,28 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+/// <summary>
+/// Manages the state of the game and its game-over transition.<br/>
+/// <i>MANDATORY for every scene with controllable player.</i>
+/// </summary>
 public class GameManager : MonoBehaviour
 {
     [SerializeField] Player player;
     [SerializeField] float gameEndSlowTime = 3f;
 
     public GameState gameState { get; private set; }
-
     public static GameManager Instance;
 
     void OnEnable()
     {
         GameEvents.OnPlayerDeath += EndGame;
-        GameEvents.OnPauseRequest += HandlePause;
+        InputEvents.OnPauseRequest += HandlePause;
     }
 
     void OnDisable()
     {
         GameEvents.OnPlayerDeath -= EndGame;
-        GameEvents.OnPauseRequest -= HandlePause;
+        InputEvents.OnPauseRequest -= HandlePause;
     }
 
     void Awake()
@@ -32,7 +35,7 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
 
         // Set max frame rate
-        Application.targetFrameRate = 60;
+        // Application.targetFrameRate = -1;
     }
 
     void Start()
@@ -83,6 +86,7 @@ public class GameManager : MonoBehaviour
         GameEvents.RaiseOnGameOver();
     }
 
+    // Invoked on pressing the pause button
     void HandlePause()
     {
         if (gameState == GameState.Playing)

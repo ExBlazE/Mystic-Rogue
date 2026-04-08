@@ -1,8 +1,15 @@
 using TMPro;
 using UnityEngine;
 
+/// <summary>
+/// Manages all UI in the game scene except the HUD.
+/// </summary>
 public class UIManager : MonoBehaviour
 {
+    [SerializeField] bool autoUISwitch;
+    [SerializeField] bool forceMobileUI;
+
+    [Space]
     [SerializeField] GameObject pauseMenu;
     [SerializeField] GameObject gameOverScreen;
     [SerializeField] TextMeshProUGUI finalScoreText;
@@ -16,14 +23,12 @@ public class UIManager : MonoBehaviour
     [SerializeField] GameObject mobileControls;
     [SerializeField] GameObject aimingArrow;
 
-    [Space]
-    [SerializeField] bool autoUISwitch;
-
     void OnEnable()
     {
         GameEvents.OnGamePause += ShowPauseMenu;
         GameEvents.OnGameResume += HidePauseMenu;
         GameEvents.OnGameOver += ShowGameOverScreen;
+        GameEvents.OnHighScore += ShowNewHighScore;
     }
 
     void OnDisable()
@@ -31,6 +36,7 @@ public class UIManager : MonoBehaviour
         GameEvents.OnGamePause -= ShowPauseMenu;
         GameEvents.OnGameResume -= HidePauseMenu;
         GameEvents.OnGameOver -= ShowGameOverScreen;
+        GameEvents.OnHighScore -= ShowNewHighScore;
     }
 
     void Start()
@@ -39,19 +45,15 @@ public class UIManager : MonoBehaviour
         gameOverScreen.SetActive(false);
         newHighScoreText.SetActive(false);
 
-        if (!autoUISwitch) return;
+        if (autoUISwitch)
+        {
+            bool isMobile = Application.isMobilePlatform || forceMobileUI;
 
-#if UNITY_STANDALONE || UNITY_WEBGL
-        keyboardTutorial.SetActive(true);
-        mobileTutorial.SetActive(false);
-        mobileControls.SetActive(false);
-        aimingArrow.SetActive(false);
-#elif UNITY_ANDROID
-        keyboardTutorial.SetActive(false);
-        mobileTutorial.SetActive(true);
-        mobileControls.SetActive(true);
-        aimingArrow.SetActive(true);
-#endif
+            keyboardTutorial.SetActive(!isMobile);
+            mobileTutorial.SetActive(isMobile);
+            mobileControls.SetActive(isMobile);
+            aimingArrow.SetActive(isMobile);
+        }
     }
 
     void ShowPauseMenu()
@@ -65,8 +67,9 @@ public class UIManager : MonoBehaviour
         gameOverScreen.SetActive(true);
 
         SessionStats stats = FindFirstObjectByType<SessionStats>();
-        finalScoreText.SetText(stats.score.ToString("D2"));
-        if (stats.newHighScore)
-            newHighScoreText.SetActive(true);
+        finalScoreText.SetText(stats.Score.ToString("D2"));
     }
+
+    void ShowNewHighScore()
+    { newHighScoreText.SetActive(true); }
 }

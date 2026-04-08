@@ -1,10 +1,13 @@
 using UnityEngine;
 
+/// <summary>
+/// Manages the stats for every game session.<br/>
+/// <i>MANDATORY for every scene with controllable player.</i>
+/// </summary>
 public class SessionStats : MonoBehaviour
 {
-    public int score { get; private set; }
-    public float timeAlive { get; private set; }
-    public bool newHighScore { get; private set; }
+    public int Score { get; private set; }
+    public float TimeAlive { get; private set; }
 
     void OnEnable()
     {
@@ -20,33 +23,34 @@ public class SessionStats : MonoBehaviour
 
     void Start()
     {
-        score = 0;
-        timeAlive = 0;
-        newHighScore = false;
+        Score = 0;
+        TimeAlive = 0;
 
-        if (DataManager.Instance != null)
-            Globals.highScore = 0;
+        if (DataManager.Instance == null)
+            Globals.HighScore = 0;
     }
 
     void Update()
     {
-        timeAlive += Time.deltaTime;
+        TimeAlive += Time.deltaTime;
     }
 
     void AddScore(int score)
     {
-        this.score += score;
-        GameEvents.RaiseOnScoreChanged(this.score);
+        this.Score += score;
+        GameEvents.RaiseOnScoreChanged(this.Score);
     }
 
+    // Check for new high score and if true, save to disk immediately
     void TryHighScore()
     {
-        if (score > Globals.highScore)
+        if (Score > Globals.HighScore)
         {
-            Globals.highScore = score;
+            Globals.HighScore = Score;
             if (DataManager.Instance != null)
                 DataManager.Instance.SaveHighScore();
-            newHighScore = true;
+
+            GameEvents.RaiseOnHighScore();
         }
     }
 }
