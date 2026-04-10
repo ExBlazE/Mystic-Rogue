@@ -81,44 +81,43 @@ public class MainMenuManager : MonoBehaviour
 
     public void SetFrameRate(int level)
     {
+        if (level < 0 || level > 3) return;
+
+        bool useSoftwareCap = Application.isMobilePlatform || Application.platform == RuntimePlatform.WebGLPlayer;
+        int maxRate = 60;
+
+        if (useSoftwareCap)
+        {
+            foreach (var res in Screen.resolutions)
+            {
+                int rate = (int)res.refreshRateRatio.value;
+                if (rate > maxRate) maxRate = rate;
+            }
+        }
+
         switch (level)
         {
             case 0:
                 QualitySettings.vSyncCount = 0;
                 Application.targetFrameRate = 30;
-                Globals.FrameRateLevel = level;
                 break;
 
             case 1:
-                QualitySettings.vSyncCount = 2;
-                Application.targetFrameRate = -1;
-                if (Application.isMobilePlatform)
-                {
-                    QualitySettings.vSyncCount = 0;
-                    Application.targetFrameRate = ((int)Screen.currentResolution.refreshRateRatio.value) / 2;
-                }
-                Globals.FrameRateLevel = level;
+                QualitySettings.vSyncCount = useSoftwareCap ? 0 : 2;
+                Application.targetFrameRate = useSoftwareCap ? (maxRate / 2) : -1;
                 break;
 
             case 2:
-                QualitySettings.vSyncCount = 1;
-                Application.targetFrameRate = -1;
-                if (Application.isMobilePlatform)
-                {
-                    QualitySettings.vSyncCount = 0;
-                    Application.targetFrameRate = (int)Screen.currentResolution.refreshRateRatio.value;
-                }
-                Globals.FrameRateLevel = level;
+                QualitySettings.vSyncCount = useSoftwareCap ? 0 : 1;
+                Application.targetFrameRate = useSoftwareCap ? maxRate : -1;
                 break;
 
             case 3:
                 QualitySettings.vSyncCount = 0;
                 Application.targetFrameRate = -1;
-                Globals.FrameRateLevel = level;
-                break;
-
-            default:
                 break;
         }
+
+        Globals.FrameRateLevel = level;
     }
 }
